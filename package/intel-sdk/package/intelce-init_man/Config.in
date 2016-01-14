@@ -1,0 +1,5 @@
+config BR2_PACKAGE_INTELCE_INIT_MAN
+bool "init_man"
+default n
+help
+None

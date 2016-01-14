@@ -1,0 +1,5 @@
+config BR2_PACKAGE_INTELCE_PIC24
+bool "pic24"
+default n
+help
+None

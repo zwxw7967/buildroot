@@ -1,0 +1,11 @@
+config BR2_PACKAGE_INTELCESDK
+	bool "Intel SDK"
+	help
+	  The Intel SDK for 
+
+if BR2_PACKAGE_INTELCESDK
+comment "IntelCE SDK"
+	source package/intel-sdk/intel-sdk/Config.in
+endif
+
+

@@ -1,0 +1,5 @@
+config BR2_PACKAGE_INTELCE_IOSF
+bool "iosf"
+default n
+help
+None

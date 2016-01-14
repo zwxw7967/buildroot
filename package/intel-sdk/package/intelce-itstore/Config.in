@@ -1,0 +1,7 @@
+config BR2_PACKAGE_INTELCE_ITSTORE
+bool "itstore"
+default n
+select BR2_PACKAGE_INTELCE_SEC
+select BR2_PACKAGE_INTELCE_OSAL
+help
+None

@@ -1,0 +1,8 @@
+config BR2_PACKAGE_INTELCE_IDL
+bool "idl"
+default n
+select BR2_PACKAGE_INTELCE_OSAL
+select BR2_PACKAGE_INTELCE_PAL
+select BR2_PACKAGE_INTELCE_GPIO
+help
+None

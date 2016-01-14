@@ -1,0 +1,5 @@
+config BR2_PACKAGE_INTELCE_EXPBUS
+bool "expbus"
+default n
+help
+None

@@ -1,0 +1,5 @@
+config BR2_PACKAGE_INTELCE_IDTSAL
+bool "idtsal"
+default n
+help
+None

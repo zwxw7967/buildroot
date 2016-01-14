@@ -1,0 +1,5 @@
+config BR2_PACKAGE_INTELCE_WATCHDOG
+bool "watchdog"
+default n
+help
+None

@@ -1,0 +1,6 @@
+config BR2_PACKAGE_INTELCE_NAND_CONFIG
+bool "nand_config"
+default n
+select BR2_PACKAGE_INTELCE_OSAL
+help
+None

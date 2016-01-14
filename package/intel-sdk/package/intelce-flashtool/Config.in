@@ -1,0 +1,5 @@
+config BR2_PACKAGE_INTELCE_FLASHTOOL
+bool "flashtool"
+default n
+help
+None

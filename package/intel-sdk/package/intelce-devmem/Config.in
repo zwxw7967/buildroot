@@ -1,0 +1,6 @@
+config BR2_PACKAGE_INTELCE_DEVMEM
+bool "devmem"
+default n
+select BR2_PACKAGE_INTELCE_PLATFORM_CONFIG
+help
+None

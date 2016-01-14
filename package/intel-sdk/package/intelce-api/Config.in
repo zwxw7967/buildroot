@@ -1,0 +1,6 @@
+config BR2_PACKAGE_INTELCE_API
+bool "api"
+default n
+select BR2_PACKAGE_INTELCE_SMD_COMMON
+help
+None
