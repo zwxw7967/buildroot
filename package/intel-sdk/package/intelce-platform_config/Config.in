@@ -1,7 +1,0 @@
-config BR2_PACKAGE_INTELCE_PLATFORM_CONFIG
-bool "platform_config"
-default n
-select BR2_PACKAGE_INTELCE_HTUPLE
-select BR2_PACKAGE_OPENSSL
-help
-None

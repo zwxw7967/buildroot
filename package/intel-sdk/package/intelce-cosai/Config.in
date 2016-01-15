@@ -1,5 +1,0 @@
-config BR2_PACKAGE_INTELCE_COSAI
-bool "cosai"
-default n
-help
-None

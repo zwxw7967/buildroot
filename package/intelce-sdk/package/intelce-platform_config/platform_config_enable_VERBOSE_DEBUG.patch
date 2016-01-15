@@ -1,0 +1,11 @@
+--- a/package/platform_config/platform_config-None-SRC-36.0.14495.347773.tgz_unpacked/project_build_i686/IntelCE/platform_config-36.0.14495.347773/linux_driver/platform_config_driver.c
++++ b/package/platform_config/platform_config-None-SRC-36.0.14495.347773.tgz_unpacked/project_build_i686/IntelCE/platform_config-36.0.14495.347773/linux_driver/platform_config_driver.c
+@@ -96,7 +96,7 @@ EXPORT_SYMBOL(config_get_str);
+ EXPORT_SYMBOL(config_set_int);
+ EXPORT_SYMBOL(config_set_str);
+ EXPORT_SYMBOL(config_load);
+-//#define VERBOSE_DEBUG
++#define VERBOSE_DEBUG
+ #ifdef VER
+ const char *Version_string = "#@# platform_config.ko " VER;
+ #endif

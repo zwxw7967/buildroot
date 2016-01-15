@@ -1,5 +1,0 @@
-config BR2_PACKAGE_INTELCE_CONFIG_DATABASE
-bool "config_database"
-default n
-help
-None

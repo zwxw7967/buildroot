@@ -1,3 +1,0 @@
-menu "Intel SDK Package Selection"
-	source "package/intel-sdk/package/Config.in"  
-endmenu

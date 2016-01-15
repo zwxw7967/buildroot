@@ -1,6 +1,0 @@
-config BR2_PACKAGE_INTELCE_CEFDK
-bool "cefdk"
-default n
-select BR2_PACKAGE_INTELCE_FLASH_ENCRYPTION_SIGNING_TOOLS
-help
-None
