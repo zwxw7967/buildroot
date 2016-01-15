@@ -28,50 +28,30 @@ INTELCESDK-BUILD = ${INTELCE_SDK_MAKE_ENV} ${INTELCE_SDK_MAKE_OPTS} ${INTELCE_SD
 
 define INTELCE_SDK_INSTALL_TO_STAGING
     if [ -d "${1}/include" ] ; then \
-      cd ${1} && find include/ -type d -exec mkdir -p ${1}/usr/{} \; ; \
-      cd ${1} && find include/ -type f -exec cp -av {} ${1}/usr/{} \; ; \
+      cd ${1} && find include/ -type f -exec $(INSTALL) -m 644 -D {} ${1}/usr/{} \; ; \
     fi
 
     if [ -d "${1}/usr/include" ] ; then \
-      cd ${1}/usr/include && find . -type d -exec mkdir -p "${STAGING_DIR}/usr/include/intelce/{}" \; ; \
-      cd ${1}/usr/include && find . -type f -exec cp -av {} "${STAGING_DIR}/usr/include/intelce/{}" \; ; \
+      cd ${1}/usr/include && find . -type f -exec $(INSTALL) -m 644 -D {} "${STAGING_DIR}/usr/include/intelce/{}" \; ; \
     fi
 
     if [ -d "${1}/lib" ] ; then \
-      cd ${1}/lib && find . -type f -name "*.a"  -exec cp -av {} "${STAGING_DIR}/usr/lib/intelce" \; ; \
-      cd ${1}/lib && find . -type f -name "*.so" -exec cp -av {} "${STAGING_DIR}/lib" \; ; \
+      cd ${1}/lib && find . -type f -name "*.a"  -exec $(INSTALL) -m 644 -D {} "${STAGING_DIR}/usr/lib/intelce" \; ; \
+      cd ${1}/lib && find . -type f -name "*.so" -exec $(INSTALL) -m 644 -D {} "${STAGING_DIR}/lib" \; ; \
     fi
 
     if [ -d "${1}/usr/lib" ] ; then \
-      cd ${1}/usr/lib && find . -type f -name "*.a"  -exec cp -av {} "${STAGING_DIR}/usr/lib/intelce" \; ; \
-      cd ${1}/usr/lib && find . -type f -name "*.so" -exec cp -av {} "${STAGING_DIR}/lib" \; ; \
+      cd ${1}/usr/lib && find . -type f -name "*.a"  -exec $(INSTALL) -m 644 -D {} "${STAGING_DIR}/usr/lib/intelce" \; ; \
+      cd ${1}/usr/lib && find . -type f -name "*.so" -exec $(INSTALL) -m 644 -D {} "${STAGING_DIR}/lib" \; ; \
     fi
 
     if [ -d "${1}/lib/modules" ] ; then \
-      cd ${1}/lib/modules && find . -type f -name "*.a" -exec cp -av {} "${STAGING_DIR}/lib/kernel/intelce" \;  ; \
+      cd ${1}/lib/modules && find . -type f -name "*.a" -exec $(INSTALL) -m 644 -D {} "${STAGING_DIR}/lib/kernel/intelce" \;  ; \
     fi
 endef
 
-
-
 define INTELCE_SDK_INSTALL_TO_TARGET
-    if [ -d "${1}/usr" ] ; then \
-        cd ${1}/usr && find . -type d -exec mkdir -p ${TARGET_DIR}/usr/{} \; ; \
-        cd ${1}/usr && find . -type f -exec cp -av {} "${TARGET_DIR}/usr/{}" \; ; \
-    fi
-
-    if [ -d "${1}/lib" ] ; then \
-        cd ${1}/lib && find . -type d -exec mkdir -p ${TARGET_DIR}/lib/{} \; ; \
-        cd ${1}/lib && find . -type f -exec cp -av {} "${TARGET_DIR}/lib/{}" \; ! -name "*.a"; \
-    fi
-
-    if [ -d "${1}/etc" ] ; then \
-        cd ${1}/etc && find . -type d -exec mkdir -p ${TARGET_DIR}/etc/{} \; ; \
-        cd ${1}/etc && find . -type f -exec cp -av {} "${TARGET_DIR}/etc/{}" \; ; \
-    fi
-
-    if [ -d "${1}/bin" ] ; then \
-        cd ${1}/bin && find . -type d -exec mkdir -p ${TARGET_DIR}/bin/{} \; ; \
-        cd ${1}/bin && find . -type f -exec cp  -av {} "${TARGET_DIR}/bin/{}" \; ; \
+    if [ -d ${1} ] ; then \
+      cd ${1} && find . -type f -exec $(INSTALL) -m 644 -D {} "${TARGET_DIR}/{}" \;  ! -name "*.a" ; \
     fi
 endef
