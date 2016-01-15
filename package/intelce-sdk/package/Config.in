@@ -2,6 +2,7 @@ source  package/intelce-sdk/package/intelce-8051_SDK/Config.in
 source  package/intelce-sdk/package/intelce-alsa_shim/Config.in
 source  package/intelce-sdk/package/intelce-api/Config.in
 source  package/intelce-sdk/package/intelce-audio/Config.in
+source  package/intelce-sdk/package/intelce-audio_fw/Config.in
 source  package/intelce-sdk/package/intelce-auto_eas/Config.in
 source  package/intelce-sdk/package/intelce-avcap/Config.in
 source  package/intelce-sdk/package/intelce-avcap_samples/Config.in

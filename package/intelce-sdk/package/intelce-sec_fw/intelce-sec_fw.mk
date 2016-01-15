@@ -8,7 +8,7 @@ INTELCE_SEC_FW_SITE = ${INTELCE_SDK_DIR}/empty
 INTELCE_SEC_FW_SITE_METHOD = local
 INTELCE_SEC_FW_LICENSE = PROPRIETARY
 INTELCE_SEC_FW_REDISTRIBUTE = NO
-INTELCE_SEC_FW_DEPENDENCIES = intelce-sdk intelce-sec intelce-flash_appdata intelce-osal intelce-pal intelce-expat intelce-config_database
+INTELCE_SEC_FW_DEPENDENCIES = intelce-sdk intelce-sec intelce-flash_appdata intelce-osal intelce-pal expat host-expat intelce-config_database
 INTELCE_SEC_FW_INSTALL_STAGING = YES
 
 INTELCE_SEC_FW_BUILD_ENV = \
