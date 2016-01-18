@@ -1,6 +1,8 @@
 menuconfig BR2_PACKAGE_GST1_BCM
 	bool "gst1-bcm"
 	select BR2_PACKAGE_GST1_PLUGINS_BASE
+	select BR2_PACKAGE_LIBCURL
+	select BR2_PACKAGE_MPG123
 	depends on BR2_PACKAGE_BCM_REFSW
 	help
 	  Broadcom NEXUS GStreamer 1.x plugins
@@ -27,12 +29,6 @@ config BR2_PACKAGE_GST1_BCM_AUDIOSINK
 	help 
 	  Add BRCM libbrcmaudiosink.so
 
-config BR2_PACKAGE_GST1_BCM_GFXSINK
-	bool "gfxsink"
-	default y
-	help 
-	  Add BRCM libbrcmgfxsink.so
-
 config BR2_PACKAGE_GST1_BCM_VIDEODECODE
 	bool "videodecode"
 	default y
@@ -50,5 +46,5 @@ config BR2_PACKAGE_GST1_BCM_VIDFILTER
 	default y
 	help 
 	  Add BRCM libbrcmvidfilter.so
-		
+
 endif
