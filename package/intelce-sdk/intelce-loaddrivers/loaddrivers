@@ -1,0 +1,26 @@
+SUMMARY = "Init script to load IntelCE drivers, etc"
+
+LICENSE = "CLOSED"
+
+SRC_URI = "\
+    file://init \
+    file://init_utilities \
+"
+
+# ----------------------------------------------------------------------------
+
+inherit update-rc.d
+
+do_configure[noexec] = "1"
+do_compile[noexec] = "1"
+
+do_install() {
+    install -d ${D}${sysconfdir}/init.d
+    install -m755 ${WORKDIR}/init ${D}${sysconfdir}/init.d/loaddrivers
+    install -m644 ${WORKDIR}/init_utilities ${D}${sysconfdir}/init.d/
+}
+
+# ----------------------------------------------------------------------
+
+INITSCRIPT_NAME = "loaddrivers"
+INITSCRIPT_PARAMS = "defaults 70"

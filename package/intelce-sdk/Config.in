@@ -1,6 +1,7 @@
 source package/intelce-sdk/intelce-sdk/Config.in
 
 if BR2_PACKAGE_INTELCE_SDK
+    source package/intelce-sdk/intelce-loaddrivers/Config.in
 	menu "Intel SDK Package Selection"
 	    source "package/intelce-sdk/package/Config.in"  
     endmenu

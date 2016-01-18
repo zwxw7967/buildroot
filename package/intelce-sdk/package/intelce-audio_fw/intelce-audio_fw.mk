@@ -11,6 +11,7 @@ INTELCE_AUDIO_FW_REDISTRIBUTE = NO
 INTELCE_AUDIO_FW_INSTALL_STAGING = YES
 
 define INTELCE_AUDIO_FW_INSTALL_TARGET_CMDS
+    $(INSTALL) -m 755 -d ${TARGET_DIR}/lib/firmware/smd
     $(INSTALL) -m 644 -D ${INTELCE_AUDIO_FW_DIR}/audio_fw_dsp0.bin ${TARGET_DIR}/lib/firmware/smd/
     $(INSTALL) -m 644 -D ${INTELCE_AUDIO_FW_DIR}/audio_fw_dsp1.bin ${TARGET_DIR}/lib/firmware/smd/
 endef

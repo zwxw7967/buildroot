@@ -125,9 +125,21 @@ fi
 
 if [ "x${BUILD_SMD_TOOLS}" = "xtrue" ]
 then
-   mkdir -p ${BUILD_ROOT_DIR}/build_i686/staging_dir/internal
+   mkdir -p ${BUILD_ROOT_DIR}/build_i686/staging_dir/internal/
    cp -av ${BUILD_ROOT_DIR}/package/smd_tools/smd_tools-None-SRC-36.0.14495.347773.tgz_unpacked/project_build_i686/IntelCE/smd_tools-36.0.14495.347773/autoapi/src/* ${BUILD_ROOT_DIR}/build_i686/staging_dir/internal/
 fi
+
+if [ "x${BUILD_IDTS_COMMON}" = "xtrue" ]
+then
+   	mkdir -p ${BUILD_ROOT_DIR}/build_i686/staging_dir/idts_common
+	cp -av ${BUILD_ROOT_DIR}/package/idts_common/idts_common-INTEL-DEV-36.0.14495.347773.tgz_unpacked/build_i686/staging_dir/idts_common/* ${BUILD_ROOT_DIR}/build_i686/staging_dir/idts_common/
+fi
+
+if [ "x${MAKE_STAGING_LIB_DIR}" = "xtrue" ]
+then
+   	mkdir -p ${BUILD_ROOT_DIR}/build_i686/staging_dir/lib
+fi
+
 
 make ${MAKEOPTS} -C ${BUILD_ROOT} ${BUILD_TARGET} &> "${LOGGING_DIR}/${BUILD_TARGET}.${stamp}.log.txt"
 # ----------------------------------------------------------------------------
