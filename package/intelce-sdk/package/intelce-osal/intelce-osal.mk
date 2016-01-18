@@ -41,6 +41,7 @@ endef
 
 define INTELCE_OSAL_INSTALL_TARGET_CMDS
     $(call INTELCE_SDK_INSTALL_TO_TARGET,${INTELCE_OSAL_DIR}/project_build_i686/IntelCE/root)
+    $(INSTALL) -m 750 -D ${INTELCE_OSAL_DIR}/project_build_i686/IntelCE/root/lib/udev/osal_fw_hotplug.sh "${TARGET_DIR}/lib/udev/osal_fw_hotplug.sh" 
 endef
 
 $(eval $(generic-package))

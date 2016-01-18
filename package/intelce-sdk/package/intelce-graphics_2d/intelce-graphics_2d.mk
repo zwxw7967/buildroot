@@ -36,6 +36,7 @@ define INTELCE_GRAPHICS_2D_BUILD_CMDS
 endef
 
 define INTELCE_GRAPHICS_2D_INSTALL_STAGING_CMDS
+    find ${INTELCE_GRAPHICS_2D_DIR} -name graphics_2d -type f -exec sed -i 's/INSTALL_GAL="no"/INSTALL_GAL="yes"/' {}  \;
     $(call INTELCE_SDK_INSTALL_TO_STAGING,${INTELCE_GRAPHICS_2D_DIR}/build_i686/staging_dir) 
 endef
 

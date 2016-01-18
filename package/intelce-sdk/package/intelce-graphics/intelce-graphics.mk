@@ -46,6 +46,8 @@ endef
 
 define INTELCE_GRAPHICS_INSTALL_TARGET_CMDS
     $(call INTELCE_SDK_INSTALL_TO_TARGET,${INTELCE_GRAPHICS_DIR}/project_build_i686/IntelCE/root)
+    $(INSTALL) -m 750 -D ${INTELCE_GRAPHICS_DIR}/project_build_i686/IntelCE/root/usr/local/graphics-sgx535-release/bin/pvrsrvctl "${TARGET_DIR}/usr/local/graphics-sgx535-release/bin/pvrsrvctl" 
+    $(INSTALL) -m 750 -D ${INTELCE_GRAPHICS_DIR}/project_build_i686/IntelCE/root/usr/local/graphics-sgx545-release/bin/pvrsrvctl "${TARGET_DIR}/usr/local/graphics-sgx545-release/bin/pvrsrvctl" 
 endef
 
 $(eval $(generic-package))

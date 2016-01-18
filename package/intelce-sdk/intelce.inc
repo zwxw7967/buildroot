@@ -51,7 +51,23 @@ define INTELCE_SDK_INSTALL_TO_STAGING
 endef
 
 define INTELCE_SDK_INSTALL_TO_TARGET
-    if [ -d ${1} ] ; then \
-      cd ${1} && find . -type f -exec $(INSTALL) -m 644 -D {} "${TARGET_DIR}/{}" \;  ! -name "*.a" ; \
-    fi
+      if [ -d "${1}/usr" ] ; then \
+        cd ${1} && find usr -type f -exec $(INSTALL) -m 644 -D {} "${TARGET_DIR}/{}" \; ; \
+      fi
+      if [ -d "${1}/usr/dtsbin" ] ; then \
+        cd ${1} && find usr/dtsbin -type f -exec $(INSTALL) -m 750 -D {} "${TARGET_DIR}/{}" \; ; \
+      fi
+      if [ -d "${1}/lib" ] ; then \
+        cd ${1} && find lib -type f -exec $(INSTALL) -m 644 -D {} "${TARGET_DIR}/{}" \;  ! -name "*.a" ; \
+      fi
+      if [ -d "${1}/etc" ] ; then \
+        cd ${1} && find etc -type f -exec $(INSTALL) -m 644 -D {} "${TARGET_DIR}/{}" \; ; \
+      fi
+      if [ -d "${1}/etc/init.d" ] ; then \
+        cd ${1} && find etc/init.d -type f -exec $(INSTALL) -m 750 -D {} "${TARGET_DIR}/{}" \; ; \
+      fi
+      if [ -d "${1}/bin" ] ; then \
+        cd ${1} && find bin -type f -exec $(INSTALL) -m 750 -D {} "${TARGET_DIR}/{}" \; ; \
+      fi
+    
 endef

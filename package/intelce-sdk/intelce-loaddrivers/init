@@ -3,376 +3,146 @@
 # set -x
 
 [ "$1" = "start" ] || exit 0
-
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 PATH=/usr/local/bin:/usr/bin:/bin:/sbin
-
 . /etc/init.d/init_utilities
-
 MODULES_DIR="/lib/modules"
 KERNEL_VERSION="$(uname -r)"
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-if [ -f ${MODULES_DIR}/idtsal_linux_driver.ko ]
-then
-  echo "Loading idtsal"
-  insmod ${MODULES_DIR}/idtsal_linux_driver.ko
-  make_dev idts idts
-  chmod 666 /dev/idts
-else
-  echo "idtsal not available..."
-fi
+/etc/init.d/init_idtsal start
+/etc/init.d/pal start
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-if [ -f  ${MODULES_DIR}/pal_linux.ko ]
-then
-  echo "Loading PAL"
-  insmod ${MODULES_DIR}/pal_linux.ko
-else
-  echo "PAL not available..."
-fi
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-if [ -f ${MODULES_DIR}/platform_config.ko ]
-then
-  echo "Loading platform configuration"
-  insmod ${MODULES_DIR}/platform_config.ko
-
-  platform_config_app load /etc/platform_config/ce4200.hcfg
-  platform_config_app load /etc/platform_config/ce4200/memory_layout_1G.hcfg platform.memory.layout
-
+echo "### Start platform configuration"
+insmod ${MODULES_DIR}/platform_config.ko
+platform_config_app load /etc/platform_config/ce4200.hcfg
+platform_config_app load /etc/platform_config/ce4200/memory_layout_1G.hcfg platform.memory.layout
 # ----------------------------------------------------------------------
 # Temp solution to over-ride media_base_address on 7401
 # Fixme: this should go away once we have machine specific platform config
 # files (or a solution to parse the memmap=XXX options on the kernel
 # command line and determine media_base_address automatically).  
-  media_base_mb="594"
-  echo "Setting board specific media_base_address: ${media_base_mb} MB"
-  platform_config_app set_int platform.memory.media_base_address $((media_base_mb*1024*1024))
-
+media_base_mb="594"
+echo "Setting board specific media_base_address: ${media_base_mb} MB"
+platform_config_app set_int platform.memory.media_base_address $((media_base_mb*1024*1024))
 # ----------------------------------------------------------------------
 # Warning: pci_query opens /proc/platform_config, so can only
 #          be run after platform_config.ko has been loaded.
 # ----------------------------------------------------------------------
-  REVISION_ID=$(pci_query -read dev_addr=0:0:0,offset=8,size=1 2>/dev/null)
-  REVISION_ID=$(echo $REVISION_ID | tr -s '[:upper:]' '[:lower:]')
+REVISION_ID=$(pci_query -read dev_addr=0:0:0,offset=8,size=1 2>/dev/null)
+REVISION_ID=$(echo $REVISION_ID | tr -s '[:upper:]' '[:lower:]')
 
-  if [ "$REVISION_ID" = "c" ] || [ "$REVISION_ID" = "0c" ]  || [ "$REVISION_ID" = "1" ]
-  then
-	platform_config_app load /etc/platform_config/ce4200_D0.hcfg
-  fi
-
+if [ "$REVISION_ID" = "c" ] || [ "$REVISION_ID" = "0c" ]  || [ "$REVISION_ID" = "1" ]
+then
+  platform_config_app load /etc/platform_config/ce4200_D0.hcfg
+fi
 # Configure the PMRs and base addresses from the memory layout
-  config_pmrs "SOC_NAME_CE4200"
-
+config_pmrs "SOC_NAME_CE4200"
 # Add the docsis ddr to the memory layout if required
-  platform_config_app execute platform.startup
-else
-  echo "Platform configuration not available..."
-fi
+platform_config_app execute platform.startup
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-if [ -f ${MODULES_DIR}/devmem.ko ]
-then
-  echo "Loading devmem"
-  insmod ${MODULES_DIR}/devmem.ko
-  make_dev devmem devmem
-  chmod 666 /dev/devmem
-else
-  echo "devmem not available..."
-fi
+/etc/init.d/devmem start
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-if [ -f ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/soundcore.ko ]
-then
-  echo "Loading ALSA"
-  insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/soundcore.ko
-  insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/core/snd.ko
-  insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/core/snd-timer.ko
-  insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/core/snd-page-alloc.ko
-  insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/core/snd-pcm.ko
-  insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/core/seq/snd-seq-device.ko
-  insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/core/snd-hwdep.ko
-  insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/core/snd-rawmidi.ko
-  insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/usb/snd-usbmidi-lib.ko
-  insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/usb/snd-usb-audio.ko
-else
-  echo "ALSA not available..."
-fi
+echo "### Start ALSA"
+try_command insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/soundcore.ko
+try_command insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/core/snd.ko
+try_command insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/core/snd-timer.ko
+try_command insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/core/snd-page-alloc.ko
+try_command insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/core/snd-pcm.ko
+try_command insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/core/seq/snd-seq-device.ko
+try_command insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/core/snd-hwdep.ko
+try_command insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/core/snd-rawmidi.ko
+try_command insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/usb/snd-usbmidi-lib.ko
+try_command insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/sound/usb/snd-usb-audio.ko
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-if [ -f ${MODULES_DIR}/cosai_irqproxy.ko ]
-then
-  echo "Loading cosai"
-  insmod ${MODULES_DIR}/cosai_irqproxy.ko
-  insmod ${MODULES_DIR}/cosai_soc_utils.ko
-else
-  echo "cosai not available..."
-fi
-
-
-# Fixme: Revisit...
-# echo "*kernel*"
-# set overcommitment mode 2
-# echo "2" >/proc/sys/vm/overcommit_memory
-# set overcommitment ratio 100% - no overcommitment
-# echo "100" >/proc/sys/vm/overcommit_ratio
-
+/etc/init.d/cosai start
+/etc/init.d/osal start
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-if [ -f ${MODULES_DIR}/osal_linux.ko ]
-then
-  echo "Loading osal"
-  insmod ${MODULES_DIR}/osal_linux.ko
-else
-  echo "osal not available..."
-fi
+echo "### Start GPIO"
+GPIO_LIB_NAME=libidl_gpio.so
+GPIO_SHIM_LIB_NAME=libidl_gpio_shim.so
+ln -sf /lib/${GPIO_SHIM_LIB_NAME} /lib/${GPIO_LIB_NAME}
+insmod ${MODULES_DIR}/idl_gpio_shim.ko
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-if [ -f ${MODULES_DIR}/idl_gpio_shim.ko ]
-then
-  echo "Loading GPIO"
-  GPIO_LIB_NAME=libidl_gpio.so
-  GPIO_SHIM_LIB_NAME=libidl_gpio_shim.so
-  ln -sf /lib/${GPIO_SHIM_LIB_NAME} /lib/${GPIO_LIB_NAME}
-  # insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/drivers/gpio/intelce_gpio.ko
-  # insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/drivers/gpio/gpio-sch.ko
-  insmod ${MODULES_DIR}/idl_gpio_shim.ko
-else
-  echo "GPIO not available..."
-fi
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*thermal*"
-insmod ${MODULES_DIR}/thermal.ko
-make_dev thermal thermal
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*avcap_core*"
-insmod ${MODULES_DIR}/avcap_core.ko
-make_dev avcap_core avcap_core
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*sven*"
-insmod ${MODULES_DIR}/sven_linux.ko
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*system_utils*"
-insmod ${MODULES_DIR}/system_utils_linux.ko
-/bin/mcu_config 0 2 -1 -1
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*graphics_2d*"
-insmod ${MODULES_DIR}/galcore.ko
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*flashtool*"
-if insmod ${MODULES_DIR}/intel_ce_flash.ko
-then
-	make_dev intel_ce_flash flash
-else
-	# flash driver fails to load on 7401
-	# Ensure that we continue loading other drivers and don't exit with an error
-	#
-	echo ; echo "**** intel_ce_flash.ko failed to load ****"; echo
-fi
+/etc/init.d/thermal start
+/etc/init.d/avcap_core start
+/etc/init.d/sven start
+/etc/init.d/system_utils start
+/etc/init.d/graphics_2d start
+/etc/init.d/flashtool start
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
 # nvram  - calling the script for now
 # echo "*nvram*"
 # /etc/init.d/nvram start
-
-echo "*idl*"
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+echo "### Start idl I2C"
 insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/drivers/i2c/i2c-dev.ko
-# insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/drivers/i2c/busses/i2c-pxa.ko
-# insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/drivers/i2c/busses/i2c-pxa-pci.ko
 insmod ${MODULES_DIR}/idl_i2c.ko
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-echo "*smartcard*"
+echo "### Start idl smartcard"
 insmod ${MODULES_DIR}/idl_smartcard.ko
 make_dev_minor scard scard0
 make_dev_minor scard scard1 1
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-echo "*spi*"
-# insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/drivers/spi/spidev.ko
-# insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/drivers/spi/spi-pxa2xx-pci.ko
-# insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/drivers/spi/spi-pxa2xx-platform.ko
-# insmod ${MODULES_DIR}/${KERNEL_VERSION}/kernel/drivers/spi/ce5xx_spi_slv.ko
+echo "### Start idl SPI"
 insmod ${MODULES_DIR}/idl_spi.ko
-
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-# echo "*expbus*"  (not for this soc)
-# echo "*init_watchdog*"  (unsupported soc)
+/etc/init.d/init_iosf start
+/etc/init.d/init_pwm start
+/etc/init.d/clock_control start
+/etc/init.d/intel_ce_pm start
+/etc/init.d/init_pic_uart start
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-echo "*init_iosf*"
-insmod ${MODULES_DIR}/iosf_wrap.ko
-make_dev_minor iosf iosf0 0
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*init_pwm*"
-insmod ${MODULES_DIR}/pwm.ko
-make_dev_minor pwm pwm0_ch0 0
-make_dev_minor pwm pwm0_ch1 1
-make_dev_minor pwm pwm0_ch2 2
-make_dev_minor pwm pwm0_ch3 3
-
-# echo "*init_punit_fw_upgrade*"   (not supported)
-# echo "*edl*"  (not supported)
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*clock_control*"
-insmod ${MODULES_DIR}/clock_control.ko
-make_dev clock_control clock_control
-# echo "*init_punit_fw_upgrade_notification*"  (not supported)
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*intel_ce_pm*"
-insmod ${MODULES_DIR}/intel_ce_pm.ko
-make_dev intel_ce_pm intel_ce_pm
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*init_pic_uart*"
-insmod ${MODULES_DIR}/intel_pic_uart.ko
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*mspod*"
-insmod ${MODULES_DIR}/mspod_drv.ko
+echo "### Staring mspod"
+try_command insmod /lib/modules/mspod_drv.ko
 make_dev mspod mspod
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-echo "*sec*"
-insmod ${MODULES_DIR}/sec_kernel.ko
-make_dev sec sec
-
-if [ "$REVISION_ID" = "8" ] || [ "$REVISION_ID" = "08" ]
-then
-	FW_FILE=`find /lib/firmware/sec -name sec_fw_4000.ce4200.c0`
-
-elif [ "$REVISION_ID" = "c" ] || [ "$REVISION_ID" = "0c" ]
-then
-	FW_FILE=`find /lib/firmware/sec -name sec_fw_4000.ce4200.d0`
-
-elif [ "$REVISION_ID" = "1" ] || [ "$REVISION_ID" = "01" ]
-then
-	FW_FILE=`find /lib/firmware/sec -name sec_fw_4000.ce4200.e0`
-fi
-
-if [ -z "$FW_FILE" ]
-then
-	FW_FILE=`find /lib/firmware/sec -name sec_fw_4000.ce4200`
-fi
-
-echo "FW_FILE: $FW_FILE"
-
-if [ -n "$FW_FILE" ]
-then
-	/bin/sec_init_tdp $FW_FILE
-else
-	/bin/sec_init_tdp
-fi
+/etc/init.d/sec start
+/etc/init.d/sec_fw_1100 start
+/etc/init.d/smd_core start
+/etc/init.d/gentimer start
+/etc/init.d/display start
+/etc/init.d/graphics start
+/etc/init.d/hdmi start
+/etc/init.d/smd start
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-echo "*sec_fw_1100*"
-if [ -n "`ls /lib/firmware/sec/sec_fw_1200* 2>/dev/null`" ]
-then
-	echo "Loading 1200 firmware"
-	sec_fw_load /lib/firmware/sec/sec_fw_1200
-fi
-if [ -n "`ls /lib/firmware/sec/sec_fw_1100* 2>/dev/null`" ]
-then
-	echo "Loading 1100 firmware"
-	sec_fw_load /lib/firmware/sec/sec_fw_1100
-fi
-if [ -n "`ls /lib/firmware/sec/sec_fw_manifest* 2>/dev/null`" ]
-then
-	echo "Loading file manifest"
-	sec_fw_load -m /lib/firmware/sec/sec_fw_manifest
-fi
+echo "### Start alsa_shim"
+insmod ${MODULES_DIR}/alsa_shim.ko
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-echo "*smd_core*"
-insmod ${MODULES_DIR}/ioctl_module.ko
-make_dev smdmsg smdmsg
-chmod 666 /dev/smdmsg
-insmod ${MODULES_DIR}/ismdcore.ko
-insmod ${MODULES_DIR}/ismdclock.ko
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*gentimer*"
-insmod ${MODULES_DIR}/gen_timer.ko
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "Loading display"
-rm -rf /dev/gdl
-
-insmod ${MODULES_DIR}/gdl_server.ko
-ulimit -c unlimited
-
-mkdir /dev/gdl
-make_dev gdl gdl/0
-make_dev gdl_track gdl/track
-chmod 666 /dev/gdl/*
-
-/bin/gdl_udaemon
-
-insmod ${MODULES_DIR}/pd_inttvenc_cvbs.ko
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*graphics*"
-insmod ${MODULES_DIR}/pvrsrvkm.ko
-/usr/bin/pvrsrvctl --start --no-module
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*hdmi*"
-insmod ${MODULES_DIR}/pd_hdmi.ko
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-echo "*smd*"
-insmod ${MODULES_DIR}/ismdclock_recovery.ko
-insmod ${MODULES_DIR}/ismdfw_manager.ko
-insmod ${MODULES_DIR}/ismdces_router.ko
-insmod ${MODULES_DIR}/ismdces_vidparse_videnc.ko
-insmod ${MODULES_DIR}/ismdces_viddec_mux.ko
-
-# Demux and tsout both access prefilter; for power management,
-# demux must resume BEFORE tsout, tsout must suspend BEFORE demux.
-# Guarantee this by loading demux first.
-insmod ${MODULES_DIR}/ismddemux_v3.ko
-insmod ${MODULES_DIR}/ismdtsout.ko
-#
-if [ -e ${MODULES_DIR}/ismdpid_remapper.ko ]
-then
-	insmod ${MODULES_DIR}/ismdpid_remapper.ko
-fi
-#
-insmod ${MODULES_DIR}/ismdviddec_v3.ko
-insmod ${MODULES_DIR}/ismdmux.ko
-insmod ${MODULES_DIR}/ismdvidenc.ko
-insmod ${MODULES_DIR}/ismdaudio.ko
-insmod ${MODULES_DIR}/ismdbufmon.ko
-insmod ${MODULES_DIR}/ismdremux.ko
-insmod ${MODULES_DIR}/ismdvidpproc.ko
-insmod ${MODULES_DIR}/ismdvidrend.ko
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-# echo "*alsa_shim*"
-# insmod ${MODULES_DIR}/alsa_shim.ko
-# ----------------------------------------------------------------------
-# ----------------------------------------------------------------------
-# echo "*smd_avcap_shim*"
-# insmod ${MODULES_DIR}/ismdavcap_shim.ko
+echo "### Start smd_avcap_shim*"
+insmod ${MODULES_DIR}/ismdavcap_shim.ko
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
 # Temp solution to disable HDCP on 7401
-echo "Disabling HDCP"
+echo "### Disabling HDCP"
 /bin/gdl_samples/portattrs -port 2 -set 0 0
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
 # Temp solution to enable USB on 7401
+echo "### Enable USB"
 /usr/dtsbin/gpio write -number 78 -output -data 1
 /usr/dtsbin/gpio write -number 79 -output -data 1
 /usr/dtsbin/memory write -width 4 -addr 0xdf818000 -data 0xc0003c0c
 # ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+echo "### Setup display mode"
+/bin/tvmode 720p
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+sleep 5
