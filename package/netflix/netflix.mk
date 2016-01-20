@@ -88,14 +88,14 @@ NETFLIX_CONF_OPTS += \
 	-DNRDP_CRASH_REPORTING="off"
 
 ifeq ($(BR2_ENABLE_DEBUG),y)
-NETFLIX_CFLAGS="$(shell echo $(TARGET_CFLAGS) | sed 's/-O[0-9]/-O0/g') -fno-inline -ggdb3"
-NETFLIX_CXXFLAGS="$(shell echo $(TARGET_CFLAGS) | sed 's/-O[0-9]/-O0/g') -fno-inline -ggdb3"
+NETFLIX_CFLAGS=$(shell echo $(TARGET_CFLAGS) | sed 's/-O[0-9]/-O0/g') -fno-inline -ggdb3
+NETFLIX_CXXFLAGS=$(shell echo $(TARGET_CFLAGS) | sed 's/-O[0-9]/-O0/g') -fno-inline -ggdb3
 
 NETFLIX_CONF_OPTS += \
 	-DCMAKE_BUILD_TYPE=Debug
 else
-NETFLIX_CFLAGS="$(TARGET_CFLAGS)"
-NETFLIX_CXXFLAGS="$(TARGET_CXXFLAGS)"
+NETFLIX_CFLAGS=$(TARGET_CFLAGS)
+NETFLIX_CXXFLAGS=$(TARGET_CXXFLAGS)
 
 NETFLIX_CONF_OPTS += \
 	-DCMAKE_BUILD_TYPE=Release
