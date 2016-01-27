@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-GST1_PLUGINS_UGLY_VERSION = 1.6.2
+GST1_PLUGINS_UGLY_VERSION = 1.6.3
 GST1_PLUGINS_UGLY_SOURCE = gst-plugins-ugly-$(GST1_PLUGINS_UGLY_VERSION).tar.xz
 GST1_PLUGINS_UGLY_SITE = http://gstreamer.freedesktop.org/src/gst-plugins-ugly
 GST1_PLUGINS_UGLY_LICENSE_FILES = COPYING
@@ -27,14 +27,13 @@ endif
 
 GST1_PLUGINS_UGLY_CONF_OPTS = --disable-examples --disable-valgrind
 
-GST_PLUGINS_BAD1_CONF_OPTS += \
+GST1_PLUGINS_UGLY_CONF_OPTS += \
 	--disable-a52dec \
 	--disable-amrnb \
 	--disable-amrwb \
 	--disable-cdio \
 	--disable-sidplay \
-	--disable-twolame \
-	--disable-x264
+	--disable-twolame
 
 GST1_PLUGINS_UGLY_DEPENDENCIES = gstreamer1 gst1-plugins-base
 
@@ -102,6 +101,14 @@ GST1_PLUGINS_UGLY_DEPENDENCIES += libmpeg2
 GST1_PLUGINS_ULGY_HAS_GPL_LICENSE = y
 else
 GST1_PLUGINS_UGLY_CONF_OPTS += --disable-mpeg2dec
+endif
+
+ifeq ($(BR2_PACKAGE_GST1_PLUGINS_UGLY_PLUGIN_X264),y)
+GST1_PLUGINS_UGLY_CONF_OPTS += --enable-x264
+GST1_PLUGINS_UGLY_DEPENDENCIES += x264
+GST1_PLUGINS_UGLY_HAS_GPL_LICENSE = y
+else
+GST1_PLUGINS_UGLY_CONF_OPTS += --disable-x264
 endif
 
 # Add GPL license if GPL plugins enabled.

@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-RPI_USERLAND_VERSION = cfa3df1420a1839eb4a1da12e744a4beb8e7e7b6
+RPI_USERLAND_VERSION = 10e49b3759e852f6b2cb1c6aff2e129d77d01933
 RPI_USERLAND_SITE = $(call github,raspberrypi,userland,$(RPI_USERLAND_VERSION))
 RPI_USERLAND_LICENSE = BSD-3c
 RPI_USERLAND_LICENSE_FILES = LICENCE
@@ -13,6 +13,11 @@ RPI_USERLAND_CONF_OPTS = -DVMCS_INSTALL_PREFIX=/usr \
 	-DCMAKE_C_FLAGS="-DVCFILED_LOCKFILE=\\\"/var/run/vcfiled.pid\\\""
 
 RPI_USERLAND_PROVIDES = libegl libgles libopenmax libopenvg
+
+ifeq ($(BR2_PACKAGE_WAYLAND),y)
+RPI_USERLAND_DEPENDENCIES += wayland
+RPI_USERLAND_CONF_OPTS += -DBUILD_WAYLAND=1
+endif
 
 ifeq ($(BR2_PACKAGE_RPI_USERLAND_START_VCFILED),y)
 define RPI_USERLAND_INSTALL_INIT_SYSV

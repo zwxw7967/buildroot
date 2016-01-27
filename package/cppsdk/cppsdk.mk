@@ -3,7 +3,8 @@
 # cppsdk
 #
 ################################################################################
-CPPSDK_VERSION = 04f7b5a4d223d3a1c758ccff7d78626083de9e3d
+
+CPPSDK_VERSION = aaa43bc337f552a780f27e5c8d874b6f1407e4cc
 CPPSDK_SITE_METHOD = git
 CPPSDK_SITE = git@github.com:Metrological/cppsdk.git
 CPPSDK_INSTALL_STAGING = YES
@@ -42,6 +43,10 @@ endif
 
 ifeq ($(BR2_PACKAGE_CPPSDK_TRACING),y)
 CPPSDK_CONF_OPTS += -DCPPSDK_TRACING=ON
+endif
+
+ifeq ($(BR2_PACKAGE_CPPSDK_PROFILER),y)
+CPPSDK_CONF_OPTS += -DCPPSDK_PROFILER=ON
 endif
 
 ifeq ($(BR2_PACKAGE_CPPSDK_DEVICES),y)

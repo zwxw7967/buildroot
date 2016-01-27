@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-WPE_VERSION = b8a0479c99c6696979b338c69100474437c3e95a
+WPE_VERSION = ba91fe8ef5819bd2616efe01904b2201c6e4f478
 WPE_SITE = $(call github,Metrological,WebKitForWayland,$(WPE_VERSION))
 
 WPE_INSTALL_STAGING = YES
@@ -26,7 +26,12 @@ WPE_EXTRA_FLAGS += \
 	-D__UCLIBC__
 endif
 
-WPE_FLAGS = -DENABLE_ACCELERATED_2D_CANVAS=ON
+WPE_FLAGS = \
+	-DENABLE_ACCELERATED_2D_CANVAS=ON \
+	-DENABLE_GEOLOCATION=ON \
+	-DENABLE_DEVICE_ORIENTATION=ON \
+	-DENABLE_GAMEPAD=ON \
+	-DENABLE_NOTIFICATIONS=ON
 
 ifeq ($(BR2_PACKAGE_RPI_USERLAND),y)
 WPE_FLAGS += -DUSE_WPE_BACKEND_BCM_RPI=ON
@@ -50,6 +55,9 @@ endif
 ifeq ($(BR2_PACKAGE_XLIB_LIBX11),)
 WPE_EXTRA_CFLAGS += -DMESA_EGL_NO_X11_HEADERS
 endif
+endif
+ifeq ($(BR2_PACKAGE_HORIZON_SDK),y)
+WPE_FLAGS += -DUSE_WPE_BACKEND_INTEL_CE=ON
 endif
 
 ifeq ($(BR2_PACKAGE_WPE_ENABLE_LOGGING),y)
@@ -136,8 +144,6 @@ define WPE_INSTALL_STAGING_CMDS
 	cp -d $(WPE_BUILDDIR)/lib/libWPE* $(STAGING_DIR)/usr/lib/ && \
 	DESTDIR=$(STAGING_DIR) $(HOST_DIR)/usr/bin/cmake -DCOMPONENT=Development -P $(WPE_BUILDDIR)/Source/JavaScriptCore/cmake_install.cmake > /dev/null && \
 	DESTDIR=$(STAGING_DIR) $(HOST_DIR)/usr/bin/cmake -DCOMPONENT=Development -P $(WPE_BUILDDIR)/Source/WebKit2/cmake_install.cmake > /dev/null )
-
-
 endef
 
 define WPE_INSTALL_TARGET_CMDS
