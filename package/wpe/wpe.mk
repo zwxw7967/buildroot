@@ -4,12 +4,12 @@
 #
 ################################################################################
 
-WPE_VERSION = 11353ef26ca669fb9589bbe88889268139995b34
+WPE_VERSION = da1cfec7e5cab8d9219038bcd64646cf31c78f57
 WPE_SITE = $(call github,Metrological,WebKitForWayland,$(WPE_VERSION))
 
 WPE_INSTALL_STAGING = YES
 WPE_DEPENDENCIES = host-flex host-bison host-gperf host-ruby host-pkgconf zlib \
-	openssl pcre libgles libegl cairo freetype fontconfig harfbuzz icu libxml2 \
+	libgcrypt pcre libgles libegl cairo freetype fontconfig harfbuzz icu libxml2 \
 	libxslt sqlite libsoup jpeg libpng webp libinput libxkbcommon xkeyboard-config
 
 ifeq ($(BR2_PACKAGE_NINJA),y)
@@ -32,6 +32,8 @@ WPE_FLAGS = \
 	-DENABLE_DEVICE_ORIENTATION=ON \
 	-DENABLE_GAMEPAD=ON \
 	-DENABLE_SUBTLE_CRYPTO=ON \
+	-DENABLE_SHADOW_DOM=ON \
+	-DENABLE_FULLSCREEN_API=ON \
 	-DENABLE_NOTIFICATIONS=ON
 
 ifeq ($(BR2_PACKAGE_RPI_USERLAND),y)
