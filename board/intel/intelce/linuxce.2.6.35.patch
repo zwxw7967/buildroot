@@ -1,0 +1,1505 @@
+From 4ed3bb08f1698c62685278051c19f474fbf961d2 Mon Sep 17 00:00:00 2001
+From: Willy Tarreau <w@1wt.eu>
+Date: Fri, 7 Jun 2013 07:11:37 +0200
+Subject: x86, ptrace: fix build breakage with gcc 4.7
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Christoph Biedl reported that 2.6.32 does not build with gcc 4.7 on
+i386 :
+
+  CC      arch/x86/kernel/ptrace.o
+arch/x86/kernel/ptrace.c:1472:17: error: conflicting types for 'syscall_trace_enter'
+In file included from /«PKGBUILDDIR»/arch/x86/include/asm/vm86.h:130:0,
+                 from /«PKGBUILDDIR»/arch/x86/include/asm/processor.h:10,
+                 from /«PKGBUILDDIR»/arch/x86/include/asm/thread_info.h:22,
+                 from include/linux/thread_info.h:56,
+                 from include/linux/preempt.h:9,
+                 from include/linux/spinlock.h:50,
+                 from include/linux/seqlock.h:29,
+                 from include/linux/time.h:8,
+                 from include/linux/timex.h:56,
+                 from include/linux/sched.h:56,
+                 from arch/x86/kernel/ptrace.c:11:
+/«PKGBUILDDIR»/arch/x86/include/asm/ptrace.h:145:13: note: previous declaration of 'syscall_trace_enter' was here
+arch/x86/kernel/ptrace.c:1517:17: error: conflicting types for 'syscall_trace_leave'
+In file included from /«PKGBUILDDIR»/arch/x86/include/asm/vm86.h:130:0,
+                 from /«PKGBUILDDIR»/arch/x86/include/asm/processor.h:10,
+                 from /«PKGBUILDDIR»/arch/x86/include/asm/thread_info.h:22,
+                 from include/linux/thread_info.h:56,
+                 from include/linux/preempt.h:9,
+                 from include/linux/spinlock.h:50,
+                 from include/linux/seqlock.h:29,
+                 from include/linux/time.h:8,
+                 from include/linux/timex.h:56,
+                 from include/linux/sched.h:56,
+                 from arch/x86/kernel/ptrace.c:11:
+/«PKGBUILDDIR»/arch/x86/include/asm/ptrace.h:146:13: note: previous declaration of 'syscall_trace_leave' was here
+make[4]: *** [arch/x86/kernel/ptrace.o] Error 1
+make[3]: *** [arch/x86/kernel] Error 2
+make[3]: *** Waiting for unfinished jobs....
+
+He also found that this issue did not appear in more recent kernels since
+this asmregparm disappeared in 3.0-rc1 with commit 1b4ac2a935 that was
+applied after some UM changes that we don't necessarily want in 2.6.32.
+
+Thus, the cleanest fix for older kernels is to make the declaration in
+ptrace.h match the one in ptrace.c by specifying asmregparm on these
+functions. They're only called from asm which explains why it used to
+work despite the inconsistency in the declaration.
+
+Reported-by: Christoph Biedl <linux-kernel.bfrz@manchmal.in-ulm.de>
+Tested-by: Christoph Biedl <linux-kernel.bfrz@manchmal.in-ulm.de>
+Signed-off-by: Willy Tarreau <w@1wt.eu>
+---
+ arch/x86/include/asm/ptrace.h | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/x86/include/asm/ptrace.h b/arch/x86/include/asm/ptrace.h
+index 0f0d908..e668d72 100644
+--- a/arch/x86/include/asm/ptrace.h
++++ b/arch/x86/include/asm/ptrace.h
+@@ -2,6 +2,7 @@
+ #define _ASM_X86_PTRACE_H
+ 
+ #include <linux/compiler.h>	/* For __user */
++#include <linux/linkage.h>	/* For asmregparm */
+ #include <asm/ptrace-abi.h>
+ #include <asm/processor-flags.h>
+ 
+@@ -142,8 +143,8 @@ extern void send_sigtrap(struct task_struct *tsk, struct pt_regs *regs,
+ 			 int error_code, int si_code);
+ void signal_fault(struct pt_regs *regs, void __user *frame, char *where);
+ 
+-extern long syscall_trace_enter(struct pt_regs *);
+-extern void syscall_trace_leave(struct pt_regs *);
++extern asmregparm long syscall_trace_enter(struct pt_regs *);
++extern asmregparm void syscall_trace_leave(struct pt_regs *);
+ 
+ static inline unsigned long regs_return_value(struct pt_regs *regs)
+ {
+-- 
+cgit v0.11.2
+
+
+
+
+--- a/arch/x86/vdso/Makefile
++++ b/arch/x86/vdso/Makefile
+@@ -69,7 +69,7 @@
+ vdso32-images			= $(vdso32.so-y:%=vdso32-%.so)
+ 
+ CPPFLAGS_vdso32.lds = $(CPPFLAGS_vdso.lds)
+-VDSO_LDFLAGS_vdso32.lds = -m elf_i386 -Wl,-soname=linux-gate.so.1
++VDSO_LDFLAGS_vdso32.lds = -m32 -Wl,-soname=linux-gate.so.1
+ 
+ # This makes sure the $(obj) subdirectory exists even though vdso32/
+ # is not a kbuild sub-make subdirectory.
+diff -Nur --exclude=.svn linux-2.6.35/drivers/net/e1000/e1000_hw.c linux-2.6.35/drivers/net/e1000_mac/e1000_hw.c
+--- linux-2.6.35/drivers/net/e1000/e1000_hw.c	2010-08-16 02:49:44.000000000 +0800
++++ linux-2.6.35/drivers/net/e1000_mac/e1000_hw.c	2010-08-16 02:45:58.000000000 +0800
+@@ -25,6 +25,10 @@
+   Intel Corporation, 5200 N.E. Elam Young Parkway, Hillsboro, OR 97124-6497
+ 
+  */
++/*******************************************************************************
++  Includes Intel Corporation's changes/modifications dated: 08/2010.
++  Changed/modified portions - Copyright @ 2010, Intel Corporation. All rights reserved.
++*******************************************************************************/
+ 
+ /* e1000_hw.c
+  * Shared functions for accessing and configuring the MAC
+@@ -32,6 +36,11 @@
+ 
+ #include "e1000.h"
+ 
++int (* gbe_config_media_read)(void  __iomem * config_ram_base_t, int length);
++int (* gbe_config_media_write)(void  __iomem * config_ram_base_t, int length);
++EXPORT_SYMBOL(gbe_config_media_read);
++EXPORT_SYMBOL(gbe_config_media_write);
++
+ static s32 e1000_check_downshift(struct e1000_hw *hw);
+ static s32 e1000_check_polarity(struct e1000_hw *hw,
+ 				e1000_rev_polarity *polarity);
+@@ -318,6 +327,9 @@
+ 	case E1000_DEV_ID_82547GI:
+ 		hw->mac_type = e1000_82547_rev_2;
+ 		break;
++	case E1000_DEV_ID_INTEL_CE_GBE:
++		hw->mac_type = e1000_cegbe;
++		break;
+ 	default:
+ 		/* Should never have loaded on this device */
+ 		return -E1000_ERR_MAC_TYPE;
+@@ -460,6 +472,7 @@
+ 		/* Reset is performed on a shadow of the control register */
+ 		ew32(CTRL_DUP, (ctrl | E1000_CTRL_RST));
+ 		break;
++	case e1000_cegbe:
+ 	default:
+ 		ew32(CTRL, (ctrl | E1000_CTRL_RST));
+ 		break;
+@@ -1341,7 +1354,7 @@
+ 	s32 ret_val;
+ 	e_dbg("e1000_copper_link_postconfig");
+ 
+-	if (hw->mac_type >= e1000_82544) {
++    if((hw->mac_type >= e1000_82544) && (hw->mac_type != e1000_cegbe)) {
+ 		e1000_config_collision_dist(hw);
+ 	} else {
+ 		ret_val = e1000_config_mac_to_phy(hw);
+@@ -1424,6 +1437,8 @@
+ 		ret_val = e1000_read_phy_reg(hw, PHY_STATUS, &phy_data);
+ 		if (ret_val)
+ 			return ret_val;
++		
++		hw->cegbe_is_link_up = (phy_data & MII_SR_LINK_STATUS) != 0;
+ 
+ 		if (phy_data & MII_SR_LINK_STATUS) {
+ 			/* Config the MAC and PHY after link is up */
+@@ -1860,7 +1875,7 @@
+ 
+ 	/* 82544 or newer MAC, Auto Speed Detection takes care of
+ 	 * MAC speed/duplex configuration.*/
+-	if (hw->mac_type >= e1000_82544)
++    if ((hw->mac_type >= e1000_82544 ) && (hw->mac_type != e1000_cegbe))
+ 		return E1000_SUCCESS;
+ 
+ 	/* Read the Device Control Register and set the bits to Force Speed
+@@ -2351,6 +2366,8 @@
+ 		ret_val = e1000_read_phy_reg(hw, PHY_STATUS, &phy_data);
+ 		if (ret_val)
+ 			return ret_val;
++		
++		hw->cegbe_is_link_up = (phy_data & MII_SR_LINK_STATUS) != 0;
+ 
+ 		if (phy_data & MII_SR_LINK_STATUS) {
+ 			hw->get_link_status = false;
+@@ -2401,7 +2418,7 @@
+ 		 * speed/duplex on the MAC to the current PHY speed/duplex
+ 		 * settings.
+ 		 */
+-		if (hw->mac_type >= e1000_82544)
++        if (hw->mac_type >= e1000_82544 && hw->mac_type != e1000_cegbe)
+ 			e1000_config_collision_dist(hw);
+ 		else {
+ 			ret_val = e1000_config_mac_to_phy(hw);
+@@ -2752,6 +2769,35 @@
+ 		 * Control register.  The MAC will take care of interfacing with the
+ 		 * PHY to retrieve the desired data.
+ 		 */
++		  if ( hw->mac_type == e1000_cegbe ) {
++			mdic = ((reg_addr << E1000_MDIC_REG_SHIFT) |
++                    (phy_addr << E1000_MDIC_PHY_SHIFT) |
++                    (INTEL_CE_GBE_MDIC_OP_READ) |
++                    (INTEL_CE_GBE_MDIC_GO));
++    
++			writel(mdic, E1000_MDIO_CMD);
++    
++			/* Poll the ready bit to see if the MDI read completed */
++			for(i = 0; i < 64; i++) {
++				udelay(50);
++				mdic = readl(E1000_MDIO_CMD);
++				if(!(mdic & INTEL_CE_GBE_MDIC_GO)) break;
++			}			
++            
++			if(mdic & INTEL_CE_GBE_MDIC_GO) {
++				DEBUGOUT("MDI Read did not complete\n");
++				return -E1000_ERR_PHY;
++			}
++			
++			mdic = readl(E1000_MDIO_STS);
++			if(mdic & INTEL_CE_GBE_MDIC_READ_ERROR) {
++				DEBUGOUT("MDI Read Error\n");
++			return -E1000_ERR_PHY;
++			}
++        	*phy_data = (uint16_t) mdic;
++    
++		} else {
++
+ 		mdic = ((reg_addr << E1000_MDIC_REG_SHIFT) |
+ 			(phy_addr << E1000_MDIC_PHY_SHIFT) |
+ 			(E1000_MDIC_OP_READ));
+@@ -2774,6 +2820,7 @@
+ 			return -E1000_ERR_PHY;
+ 		}
+ 		*phy_data = (u16) mdic;
++			}
+ 	} else {
+ 		/* We must first send a preamble through the MDIO pin to signal the
+ 		 * beginning of an MII instruction.  This is done by sending 32
+@@ -2854,6 +2901,28 @@
+ 		 * for the PHY register in the MDI Control register.  The MAC will take
+ 		 * care of interfacing with the PHY to send the desired data.
+ 		 */
++		 if ( hw->mac_type == e1000_cegbe ) {
++		   mdic = (((uint32_t) phy_data) |
++                    (reg_addr << E1000_MDIC_REG_SHIFT) |
++                    (phy_addr << E1000_MDIC_PHY_SHIFT) |
++                    (INTEL_CE_GBE_MDIC_OP_WRITE) |
++                    (INTEL_CE_GBE_MDIC_GO ));
++    
++			writel(mdic, E1000_MDIO_CMD);
++
++            /* Poll the ready bit to see if the MDI read completed */
++            for(i = 0; i < 640; i++) {
++                udelay(5);
++                mdic = readl(E1000_MDIO_CMD);
++                if(!(mdic & INTEL_CE_GBE_MDIC_GO)) break;
++            }
++
++            if(mdic & INTEL_CE_GBE_MDIC_GO) {
++                DEBUGOUT("MDI Write did not complete\n");
++                return -E1000_ERR_PHY;
++            }
++
++		} else {
+ 		mdic = (((u32) phy_data) |
+ 			(reg_addr << E1000_MDIC_REG_SHIFT) |
+ 			(phy_addr << E1000_MDIC_PHY_SHIFT) |
+@@ -2872,6 +2941,7 @@
+ 			e_dbg("MDI Write did not complete\n");
+ 			return -E1000_ERR_PHY;
+ 		}
++			}
+ 	} else {
+ 		/* We'll need to use the SW defined pins to shift the write command
+ 		 * out to the PHY. We first send a preamble to the PHY to signal the
+@@ -3317,10 +3387,13 @@
+ s32 e1000_init_eeprom_params(struct e1000_hw *hw)
+ {
+ 	struct e1000_eeprom_info *eeprom = &hw->eeprom;
+-	u32 eecd = er32(EECD);
++	u32 eecd = 0;
+ 	s32 ret_val = E1000_SUCCESS;
+ 	u16 eeprom_size;
+ 
++	if(hw->mac_type != e1000_cegbe)
++		eecd = er32(EECD);
++
+ 	e_dbg("e1000_init_eeprom_params");
+ 
+ 	switch (hw->mac_type) {
+@@ -3741,6 +3814,14 @@
+ 	u32 i = 0;
+ 
+ 	e_dbg("e1000_read_eeprom");
++	
++	if( hw->mac_type ==  e1000_cegbe ){
++		if(gbe_config_read_words(GBE_CONFIG_BASE_VIRT, offset, words, data)){
++			return -E1000_ERR_EEPROM;
++		}
++
++		return E1000_SUCCESS;
++	}
+ 
+ 	/* If eeprom is not yet detected, do so now */
+ 	if (eeprom->word_size == 0)
+@@ -3903,6 +3984,14 @@
+ 	s32 status = 0;
+ 
+ 	e_dbg("e1000_write_eeprom");
++	
++	if( hw->mac_type ==  e1000_cegbe ){
++		if(gbe_config_write_words(GBE_CONFIG_BASE_VIRT, offset, words, data)){
++			return -E1000_ERR_EEPROM;
++		}
++	
++	   	return E1000_SUCCESS;
++	}
+ 
+ 	/* If eeprom is not yet detected, do so now */
+ 	if (eeprom->word_size == 0)
+diff -Nur --exclude=.svn linux-2.6.35/drivers/net/e1000/e1000_hw.h linux-2.6.35/drivers/net/e1000_mac/e1000_hw.h
+--- linux-2.6.35/drivers/net/e1000/e1000_hw.h	2010-08-16 02:49:44.000000000 +0800
++++ linux-2.6.35/drivers/net/e1000_mac/e1000_hw.h	2010-08-16 02:45:58.000000000 +0800
+@@ -25,6 +25,10 @@
+   Intel Corporation, 5200 N.E. Elam Young Parkway, Hillsboro, OR 97124-6497
+ 
+ *******************************************************************************/
++/*******************************************************************************
++  Includes Intel Corporation's changes/modifications dated: 08/2010.
++  Changed/modified portions - Copyright @ 2010, Intel Corporation. All rights reserved.
++*******************************************************************************/
+ 
+ /* e1000_hw.h
+  * Structures, enums, and macros for the MAC
+@@ -34,6 +38,7 @@
+ #define _E1000_HW_H_
+ 
+ #include "e1000_osdep.h"
++#include "gbe_mac_access.h"
+ 
+ 
+ /* Forward declarations of structures used by the shared code */
+@@ -52,6 +57,7 @@
+ 	e1000_82545,
+ 	e1000_82545_rev_3,
+ 	e1000_82546,
++    e1000_cegbe,
+ 	e1000_82546_rev_3,
+ 	e1000_82541,
+ 	e1000_82541_rev_2,
+@@ -442,6 +448,7 @@
+ #define E1000_DEV_ID_82547EI             0x1019
+ #define E1000_DEV_ID_82547EI_MOBILE      0x101A
+ #define E1000_DEV_ID_82546GB_QUAD_COPPER_KSP3 0x10B5
++#define E1000_DEV_ID_INTEL_CE_GBE				 0x2E6E
+ 
+ #define NODE_ADDRESS_SIZE 6
+ #define ETH_LENGTH_OF_ADDRESS 6
+@@ -808,6 +815,16 @@
+ #define E1000_CTRL_EXT 0x00018	/* Extended Device Control - RW */
+ #define E1000_FLA      0x0001C	/* Flash Access - RW */
+ #define E1000_MDIC     0x00020	/* MDI Control - RW */
++
++extern void  __iomem * intel_ce_gbe_mdio_base_virt;	
++#define INTEL_CE_GBE_MDIO_RCOMP_BASE	(intel_ce_gbe_mdio_base_virt) 
++#define E1000_MDIO_STS			(INTEL_CE_GBE_MDIO_RCOMP_BASE + 0 )
++#define E1000_MDIO_CMD			(INTEL_CE_GBE_MDIO_RCOMP_BASE + 4 )
++#define E1000_MDIO_DRV			(INTEL_CE_GBE_MDIO_RCOMP_BASE + 8 )
++#define E1000_MDC_DRV			(INTEL_CE_GBE_MDIO_RCOMP_BASE + 0xC )
++#define E1000_RCOMP_CTL		(INTEL_CE_GBE_MDIO_RCOMP_BASE + 0x20 )
++#define E1000_RCOMP_STS		(INTEL_CE_GBE_MDIO_RCOMP_BASE + 0x24 )
++
+ #define E1000_SCTL     0x00024	/* SerDes Control - RW */
+ #define E1000_FEXTNVM  0x00028	/* Future Extended NVM register */
+ #define E1000_FCAL     0x00028	/* Flow Control Address Low - RW */
+@@ -820,6 +837,28 @@
+ #define E1000_IMS      0x000D0	/* Interrupt Mask Set - RW */
+ #define E1000_IMC      0x000D8	/* Interrupt Mask Clear - WO */
+ #define E1000_IAM      0x000E0	/* Interrupt Acknowledge Auto Mask */
++
++#define E1000_CTL_AUX  0x000E0  /* Auxiliary Control Register. This register is Intel Gen3 specific, 
++                                 * RMII/RGMII function is switched by this register - RW */
++/* Following are bits definitions of the Auxiliary Control Register */
++#define E1000_CTL_AUX_END_SEL_SHIFT		10
++#define E1000_CTL_AUX_ENDIANESS_SHIFT	8
++#define E1000_CTL_AUX_RGMII_RMII_SHIFT	0
++
++#define E1000_CTL_AUX_DES_PKT 	(0x0 << E1000_CTL_AUX_END_SEL_SHIFT)/* descriptor and packet transfer use CTL_AUX.ENDIANESS*/
++#define E1000_CTL_AUX_DES 		(0x1 << E1000_CTL_AUX_END_SEL_SHIFT)/* descriptor use CTL_AUX.ENDIANESS, packet use default*/
++#define E1000_CTL_AUX_PKT 		(0x2 << E1000_CTL_AUX_END_SEL_SHIFT)/* descriptor use default, packet use CTL_AUX.ENDIANESS*/
++#define E1000_CTL_AUX_ALL 		(0x3 << E1000_CTL_AUX_END_SEL_SHIFT)/* all use CTL_AUX.ENDIANESS*/
++
++#define E1000_CTL_AUX_RGMII 	(0x0 << E1000_CTL_AUX_RGMII_RMII_SHIFT)	
++#define E1000_CTL_AUX_RMII 		(0x1 << E1000_CTL_AUX_RGMII_RMII_SHIFT)	
++
++#define E1000_CTL_AUX_LWLE_BBE	(0x0 << E1000_CTL_AUX_ENDIANESS_SHIFT)	/* LW little endian, Byte big endian */	
++#define E1000_CTL_AUX_LWLE_BLE 	(0x1 << E1000_CTL_AUX_ENDIANESS_SHIFT)	/* LW little endian, Byte little endian */
++#define E1000_CTL_AUX_LWBE_BBE 	(0x2 << E1000_CTL_AUX_ENDIANESS_SHIFT)	/* LW big endian, Byte big endian */
++#define E1000_CTL_AUX_LWBE_BLE 	(0x3 << E1000_CTL_AUX_ENDIANESS_SHIFT)	/* LW big endian, Byte little endian */
++
++
+ #define E1000_RCTL     0x00100	/* RX Control - RW */
+ #define E1000_RDTR1    0x02820	/* RX Delay Timer (1) - RW */
+ #define E1000_RDBAL1   0x02900	/* RX Descriptor Base Address Low (1) - RW */
+@@ -1381,6 +1420,7 @@
+ 	bool leave_av_bit_off;
+ 	bool bad_tx_carr_stats_fd;
+ 	bool has_smbus;
++    bool	 		cegbe_is_link_up;
+ };
+ 
+ #define E1000_EEPROM_SWDPIN0   0x0001	/* SWDPIN 0 EEPROM Value */
+@@ -1571,6 +1611,12 @@
+ #define E1000_MDIC_INT_EN    0x20000000
+ #define E1000_MDIC_ERROR     0x40000000
+ 
++#define INTEL_CE_GBE_MDIC_OP_WRITE 		0x04000000	
++#define INTEL_CE_GBE_MDIC_OP_READ  		0x00000000
++#define INTEL_CE_GBE_MDIC_GO  		   		0x80000000
++#define INTEL_CE_GBE_MDIC_READ_ERROR    	0x80000000
++
++
+ #define E1000_KUMCTRLSTA_MASK           0x0000FFFF
+ #define E1000_KUMCTRLSTA_OFFSET         0x001F0000
+ #define E1000_KUMCTRLSTA_OFFSET_SHIFT   16
+diff -Nur --exclude=.svn linux-2.6.35/drivers/net/e1000/e1000_main.c linux-2.6.35/drivers/net/e1000_mac/e1000_main.c
+--- linux-2.6.35/drivers/net/e1000/e1000_main.c	2010-08-16 02:49:44.000000000 +0800
++++ linux-2.6.35/drivers/net/e1000_mac/e1000_main.c	2010-08-16 02:45:58.000000000 +0800
+@@ -25,10 +25,20 @@
+   Intel Corporation, 5200 N.E. Elam Young Parkway, Hillsboro, OR 97124-6497
+ 
+ *******************************************************************************/
++/*******************************************************************************
++  Includes Intel Corporation's changes/modifications dated: 08/2010.
++  Changed/modified portions - Copyright @ 2010, Intel Corporation. All rights reserved.
++*******************************************************************************/
+ 
+ #include "e1000.h"
+ #include <net/ip6_checksum.h>
+ 
++#include <asm/io.h>
++
++static unsigned long intel_ce_gbe_mdio_base_phy;	//Intel Media SOC GbE MDIO physical base address
++void __iomem * intel_ce_gbe_mdio_base_virt;		//Intel Media SOC GbE MDIO virtual base address
++void __iomem * gbe_config_base_virt;				//Intel Media SOC FLASH virtual base address	
++
+ char e1000_driver_name[] = "e1000";
+ static char e1000_driver_string[] = "Intel(R) PRO/1000 Network Driver";
+ #define DRV_VERSION "7.3.21-k6-NAPI"
+@@ -79,6 +89,7 @@
+ 	INTEL_E1000_ETHERNET_DEVICE(0x108A),
+ 	INTEL_E1000_ETHERNET_DEVICE(0x1099),
+ 	INTEL_E1000_ETHERNET_DEVICE(0x10B5),
++	INTEL_E1000_ETHERNET_DEVICE(0x2E6E),	
+ 	/* required last entry */
+ 	{0,}
+ };
+@@ -457,6 +468,7 @@
+ 		case e1000_82545:
+ 		case e1000_82545_rev_3:
+ 		case e1000_82546:
++		case e1000_cegbe:
+ 		case e1000_82546_rev_3:
+ 		case e1000_82541:
+ 		case e1000_82541_rev_2:
+@@ -554,6 +566,7 @@
+ 	case e1000_82545:
+ 	case e1000_82545_rev_3:
+ 	case e1000_82546:
++	case e1000_cegbe:
+ 	case e1000_82546_rev_3:
+ 		pba = E1000_PBA_48K;
+ 		break;
+@@ -901,6 +914,17 @@
+ 		goto err_sw_init;
+ 
+ 	err = -EIO;
++	
++	if (adapter->hw.mac_type == e1000_cegbe)	{ 
++		intel_ce_gbe_mdio_base_phy 	= pci_resource_start(pdev, BAR_1);
++		intel_ce_gbe_mdio_base_virt = ioremap(intel_ce_gbe_mdio_base_phy, pci_resource_len(pdev, BAR_1));  
++		if(!intel_ce_gbe_mdio_base_virt)
++			goto err_sw_init;
++		gbe_config_base_virt 		= phys_to_virt(GBE_CONFIG_RAM_BASE);  
++		if(!gbe_config_base_virt)
++			goto err_mdio_ioremap;
++
++	}
+ 
+ 	if (hw->mac_type >= e1000_82543) {
+ 		netdev->features = NETIF_F_SG |
+@@ -1072,6 +1096,8 @@
+ 		iounmap(hw->flash_address);
+ 	kfree(adapter->tx_ring);
+ 	kfree(adapter->rx_ring);
++err_mdio_ioremap:
++	iounmap(intel_ce_gbe_mdio_base_virt);
+ err_sw_init:
+ 	iounmap(hw->hw_addr);
+ err_ioremap:
+@@ -1195,6 +1221,13 @@
+ 		e_err("Unable to allocate memory for queues\n");
+ 		return -ENOMEM;
+ 	}
++     /* 
++	 * for Intel CE SoC MAC controller, it is necessary to keep
++	 * track of the last known state of the link to determine if
++	 * the link experienced a change in state when watchdog
++	 * fires
++	 */
++	adapter->hw.cegbe_is_link_up = false;
+ 
+ 	/* Explicitly disable IRQ since the NIC can be in any state. */
+ 	e1000_irq_disable(adapter);
+@@ -1362,6 +1395,7 @@
+ 	/* First rev 82545 and 82546 need to not allow any memory
+ 	 * write location to cross 64k boundary due to errata 23 */
+ 	if (hw->mac_type == e1000_82545 ||
++		hw->mac_type == e1000_cegbe ||
+ 	    hw->mac_type == e1000_82546) {
+ 		return ((begin ^ (end - 1)) >> 16) != 0 ? false : true;
+ 	}
+@@ -2272,7 +2306,17 @@
+ 		link_active = hw->serdes_has_link;
+ 		break;
+ 	default:
+-		break;
++		if (hw->mac_type == e1000_cegbe) {
++			ret_val = e1000_read_phy_reg(&adapter->hw, PHY_STATUS, &link_up);
++			ret_val = e1000_read_phy_reg(&adapter->hw, PHY_STATUS, &link_up);
++	    	if (ret_val)
++				DPRINTK(LINK, INFO, "Link status detection from PHY failed!\n");
++
++			link = link_up & MII_SR_LINK_STATUS;
++			break;
++		}
++		else
++			break;
+ 	}
+ 
+ 	return link_active;
+@@ -2289,6 +2333,26 @@
+ 	struct net_device *netdev = adapter->netdev;
+ 	struct e1000_tx_ring *txdr = adapter->tx_ring;
+ 	u32 link, tctl;
++	u16 link_up;
++
++   /* 
++    * Test the PHY for link status on Intel CE SoC MAC.
++    * If the link status is different than the last link status stored
++    * in the adapter->hw structure, then set hw->get_link_status = 1
++    */
++	if (adapter->hw.mac_type == e1000_cegbe) {
++		ret_val = e1000_read_phy_reg(&adapter->hw, PHY_STATUS, &link_up);
++		ret_val = e1000_read_phy_reg(&adapter->hw, PHY_STATUS, &link_up);
++    	if (ret_val)
++			DPRINTK(LINK, INFO, "Link status detection from PHY failed!\n");
++
++		link_up &= MII_SR_LINK_STATUS;
++       if(link_up != adapter->hw.cegbe_is_link_up)
++			adapter->hw.get_link_status = true;
++		else
++			adapter->hw.get_link_status = false;
++	}
++
+ 
+ 	link = e1000_has_link(adapter);
+ 	if ((netif_carrier_ok(netdev)) && link)
+diff -Nur --exclude=.svn linux-2.6.35/drivers/net/e1000/gbe_mac_access.h linux-2.6.35/drivers/net/e1000_mac/gbe_mac_access.h
+--- linux-2.6.35/drivers/net/e1000/gbe_mac_access.h	1970-01-01 08:00:00.000000000 +0800
++++ linux-2.6.35/drivers/net/e1000_mac/gbe_mac_access.h	2010-08-16 02:46:11.000000000 +0800
+@@ -0,0 +1,154 @@
++/*
++GPL LICENSE SUMMARY
++
++Copyright(c) 2005-2010 Intel Corporation. All rights reserved.
++
++This program is free software; you can redistribute it and/or modify
++it under the terms of version 2 of the GNU General Public License as
++published by the Free Software Foundation.
++
++This program is distributed in the hope that it will be useful, but
++WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++General Public License for more details.
++You should have received a copy of the GNU General Public License
++along with this program; if not, write to the Free Software
++Foundation, Inc., 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
++The full GNU General Public License is included in this distribution
++in the file called LICENSE.GPL.
++
++Contact Information:
++Intel Corporation
++2200 Mission College Blvd.
++Santa Clara, CA 97052
++*/
++
++/* gbe_mac_access.h
++ * Structures, enums, and macros for the MAC
++ */
++#ifndef _GBE_MAC_ACCESS_H_
++#define _GBE_MAC_ACCESS_H_
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/fs.h>
++#include <linux/init.h>
++#include <linux/pci.h>
++#include <linux/pci_ids.h>
++#include <linux/interrupt.h>
++#include <linux/spinlock.h>
++#include <linux/miscdevice.h>
++#include <linux/mm.h>
++#include <linux/vmalloc.h>
++#include <linux/delay.h>
++#include <linux/wait.h>
++#include <linux/semaphore.h>
++#include <asm/uaccess.h>
++#include <linux/time.h>
++
++extern	void __iomem * gbe_config_base_virt;
++#define GBE_CONFIG_BASE_VIRT  	gbe_config_base_virt
++
++#define CONFIG_RAM_BASE		0x60000 
++#define GBE_CONFIG_OFFSET	0x0
++#define GBE_CONFIG_RAM_BASE		((unsigned int)(CONFIG_RAM_BASE + GBE_CONFIG_OFFSET))
++#define GBE_CONFIG_DATA_LENGTH	0x200 
++
++#define GBE_CONFIG_FLASH_READ(base,offset,count,data)		gbe_config_read_words(base,offset,count,data)
++#define GBE_CONFIG_FLASH_WRITE(base,offset,count,data)		gbe_config_write_words(base,offset,count,data)
++
++#define GBE_PERROR(fmt, args...) printk("[ERROR] %s: " fmt, __FUNCTION__ , ## args)
++  
++extern int (* gbe_config_media_read)(void  __iomem * config_ram_base_t, int length);
++extern int (* gbe_config_media_write)(void  __iomem * config_ram_base_t, int length);
++
++/* = = = = = = = = = = = = = = = = = = = = == = = = = = = = = = = = = = = = = = = = = */
++/*!  \brief Write GbE configuration data from RAM
++ *
++ *   Write configuration data from RAM 
++ *
++ *     @param[in] ram_base_t         the ram base address used to store the configuration data
++ *     @param[in] offset_t           offset address in the configuration data. 
++ *     @param[in] count              total numbers of word to be read  
++ *     @param[out] buf_t             buffer of the  data to be written
++ *     @return  logical true if successful
++ *              logical false if failed for some reason.
++ */
++
++static int inline gbe_config_write_words(void  __iomem * ram_base_t, unsigned short offset_t, unsigned short count, unsigned short *buf_t)
++{
++	volatile unsigned short * dst;
++	unsigned int * config_ram_base_t ;
++	int length = GBE_CONFIG_DATA_LENGTH; 
++
++	dst = (volatile unsigned short *)(ram_base_t + (unsigned int)offset_t);
++	*dst = *buf_t;
++
++	if(gbe_config_media_write){
++        config_ram_base_t = gbe_config_base_virt;	
++		gbe_config_media_write(config_ram_base_t, length);		
++	}
++	return 0;
++}
++
++/*  write a word  */
++static int inline read_one_word(void  __iomem * ram_base_t, unsigned short offset, unsigned short *buf)
++{
++    int ret = 0;
++    volatile unsigned int ramBase;
++	volatile unsigned short * src;
++
++	if(!buf){
++		GBE_PERROR("Invalid buffer address!\n");
++		return -EINVAL;
++	}
++	
++	if( offset > 0x3f)
++	{
++		GBE_PERROR("invalid offset number: %x\n", offset);
++		return -EINVAL;
++	}
++
++	// translate the address from eeporm address (in word) into the flash address (in byte);
++	offset<<=1;
++
++	ramBase = (volatile unsigned int)ram_base_t;
++	src = (volatile unsigned short *)(ramBase + (unsigned int)offset);
++	*buf = *src;
++    
++	return ret;
++}
++/* = = = = = = = = = = = = = = = = = = = = == = = = = = = = = = = = = = = = = = = = = */
++/*!  \brief Read GbE configuration data from RAM
++ *
++ *   Read  configuration data from RAM 
++ *
++ *     @param[in] ram_base_t           the ram base address used to store the configuration data
++ *     @param[in] offset_t           offset address in the configuration data. 
++ *     @param[in] count              totol numbers of word to be read  
++ *     @param[out] buf_t             buffer of returned data   
++ *     @return  logical true if successful
++ *              logical false if failed for some reason.
++ */
++
++static int inline gbe_config_read_words(void  __iomem * ram_base_t, unsigned short offset_t, unsigned short count, unsigned short *buf_t)
++{
++	int ret = 0 ;
++	unsigned short i, offset, * buf;
++
++	if( (count + offset_t - 1 ) > 0x3f){
++		printk("Invalid words number, eeprom space limited to 0x3f word size\n");
++	}
++
++	offset = offset_t;
++	buf = buf_t;	
++
++	for(i=0;i<count;i++){
++		read_one_word(ram_base_t, offset, buf);
++		offset ++;
++		buf ++;
++	}
++	
++	return ret;
++}
++#endif //_GBE_MAC_ACCESS_H_
+diff -Nur --exclude=.svn linux-2.6.35/drivers/net/e1000/e1000_hw.c linux-2.6.35/drivers/net/e1000_phy/e1000_hw.c
+--- linux-2.6.35/drivers/net/e1000/e1000_hw.c	2010-08-15 03:55:22.000000000 +0800
++++ linux-2.6.35/drivers/net/e1000_phy/e1000_hw.c	2010-08-15 04:11:28.000000000 +0800
+@@ -135,6 +135,9 @@
+ 	case M88E1111_I_PHY_ID:
+ 		hw->phy_type = e1000_phy_m88;
+ 		break;
++    case RTL8211B_PHY_ID:
++        hw->phy_type = e1000_phy_rtl8211b;
++        break;
+ 	case IGP01E1000_I_PHY_ID:
+ 		if (hw->mac_type == e1000_82541 ||
+ 		    hw->mac_type == e1000_82541_rev_2 ||
+@@ -1273,6 +1276,52 @@
+ 
+ 	return E1000_SUCCESS;
+ }
++/********************************************************************
+++* Copper link setup for e1000_phy_rtl series.
+++*
+++* hw - Struct containing variables accessed by shared code
+++*********************************************************************/
++static int32_t
++e1000_copper_link_rtl_setup(struct e1000_hw *hw)
++ 
++{
++    int32_t ret_val;
++	
++    /* SW Reset the PHY so all changes take effect */
++    ret_val = e1000_phy_reset(hw);
++    if(ret_val) {
++        DEBUGOUT("Error Resetting the PHY\n");
++        return ret_val;
++    }
++
++   return E1000_SUCCESS;
++
++}
++
++static int32_t
++gbe_oem_phy_setup(struct e1000_hw *hw)
++{
++	int32_t ret_val;
++
++	switch(hw->phy_type)
++	{
++		case e1000_phy_rtl8211b:
++	        ret_val = e1000_copper_link_rtl_setup(hw);
++    	    if(ret_val)
++			{
++				printk(" e1000_copper_link_rtl_setup failed!\n");
++	            return ret_val;
++			}
++			break;
++	
++		default:
++        	DEBUGOUT("Error Resetting the PHY\n");
++			return E1000_ERR_PHY_TYPE;
++	}
++   
++   return E1000_SUCCESS;
++}
++
+ 
+ /**
+  * e1000_copper_link_autoneg - setup auto-neg
+@@ -1409,6 +1458,15 @@
+ 		if (ret_val)
+ 			return ret_val;
+ 	}
++	else {
++        ret_val = gbe_oem_phy_setup(hw);
++        if(ret_val)
++		{
++			printk(" gbe_oem_phy_setup failed!\n");
++            return ret_val;
++		}
++	}
++
+ 
+ 	if (hw->autoneg) {
+ 		/* Setup autoneg and flow control advertisement
+@@ -3118,6 +3176,9 @@
+ 		if (hw->phy_id == M88E1011_I_PHY_ID)
+ 			match = true;
+ 		break;
++	case e1000_cegbe:
++        if(hw->phy_id == RTL8211B_PHY_ID) match = true;
++        break;
+ 	case e1000_82541:
+ 	case e1000_82541_rev_2:
+ 	case e1000_82547:
+@@ -3361,6 +3422,8 @@
+ 
+ 	if (hw->phy_type == e1000_phy_igp)
+ 		return e1000_phy_igp_get_info(hw, phy_info);
++	else if(hw->phy_type == e1000_phy_rtl8211b)
++    	return E1000_SUCCESS;
+ 	else
+ 		return e1000_phy_m88_get_info(hw, phy_info);
+ }
+diff -Nur --exclude=.svn linux-2.6.35/drivers/net/e1000/e1000_hw.h linux-2.6.35/drivers/net/e1000_phy/e1000_hw.h
+--- linux-2.6.35/drivers/net/e1000/e1000_hw.h	2010-08-15 03:55:22.000000000 +0800
++++ linux-2.6.35/drivers/net/e1000_phy/e1000_hw.h	2010-08-15 04:11:29.000000000 +0800
+@@ -217,6 +217,7 @@
+ typedef enum {
+     e1000_phy_m88 = 0,
+     e1000_phy_igp,
++    e1000_phy_rtl8211b,
+     e1000_phy_undefined = 0xFF
+ } e1000_phy_type;
+ 
+@@ -2916,6 +2917,8 @@
+ #define M88E1011_I_REV_4   0x04
+ #define M88E1111_I_PHY_ID  0x01410CC0
+ #define L1LXT971A_PHY_ID   0x001378E0
++#define RTL8211B_PHY_ID   	0x001CC910
++
+ 
+ /* Bits...
+  * 15-5: page
+diff -Nur --exclude=.svn linux-2.6.35/drivers/net/e1000/e1000_hw.c linux-2.6.35/drivers/net/e1000_8201n/e1000_hw.c
+--- linux-2.6.35/drivers/net/e1000/e1000_hw.c	2010-10-02 08:09:14.000000000 +0800
++++ linux-2.6.35/drivers/net/e1000_8201n/e1000_hw.c	2010-10-02 08:09:34.000000000 +0800
+@@ -138,6 +138,9 @@
+     case RTL8211B_PHY_ID:
+         hw->phy_type = e1000_phy_rtl8211b;
+         break;
++    case RTL8201N_PHY_ID:
++        hw->phy_type = e1000_phy_rtl8201n;
++        break;
+ 	case IGP01E1000_I_PHY_ID:
+ 		if (hw->mac_type == e1000_82541 ||
+ 		    hw->mac_type == e1000_82541_rev_2 ||
+@@ -387,6 +390,9 @@
+ 		case e1000_82542_rev2_1:
+ 			hw->media_type = e1000_media_type_fiber;
+ 			break;
++        case e1000_cegbe:
++            hw->media_type = e1000_media_type_copper;
++            break;
+ 		default:
+ 			status = er32(STATUS);
+ 			if (status & E1000_STATUS_TBIMODE) {
+@@ -1290,7 +1296,7 @@
+     /* SW Reset the PHY so all changes take effect */
+     ret_val = e1000_phy_reset(hw);
+     if(ret_val) {
+-        DEBUGOUT("Error Resetting the PHY\n");
++        e_dbg("Error Resetting the PHY\n");
+         return ret_val;
+     }
+ 
+@@ -1302,20 +1308,37 @@
+ gbe_oem_phy_setup(struct e1000_hw *hw)
+ {
+ 	int32_t ret_val;
++    u32 ctrl_aux;
+ 
+ 	switch(hw->phy_type)
+ 	{
+ 		case e1000_phy_rtl8211b:
+ 	        ret_val = e1000_copper_link_rtl_setup(hw);
+-    	    if(ret_val)
+-			{
++            if(ret_val)	{
++               printk(" e1000_copper_link_rtl_setup failed!\n");
++               return ret_val;
++            }
++            break;
++        case e1000_phy_rtl8201n:
++            //Set RMII mode 
++            ctrl_aux = er32(CTL_AUX);
++            ctrl_aux |= E1000_CTL_AUX_RMII;
++            ew32(CTL_AUX, ctrl_aux);
++            E1000_WRITE_FLUSH();
++            //Disable the J/K bits requried for recieve
++            ctrl_aux = er32(CTL_AUX);
++            ctrl_aux |= 0x4;
++            ctrl_aux &= ~0x2;
++            ew32(CTL_AUX, ctrl_aux);
++            E1000_WRITE_FLUSH();
++            ret_val = e1000_copper_link_rtl_setup(hw);
++            if(ret_val)	{
+ 				printk(" e1000_copper_link_rtl_setup failed!\n");
+ 	            return ret_val;
+ 			}
+ 			break;
+-	
+ 		default:
+-        	DEBUGOUT("Error Resetting the PHY\n");
++        	e_dbg("Error Resetting the PHY\n");
+ 			return E1000_ERR_PHY_TYPE;
+ 	}
+    
+@@ -1347,6 +1370,10 @@
+ 	 */
+ 	if (hw->autoneg_advertised == 0)
+ 		hw->autoneg_advertised = AUTONEG_ADVERTISE_SPEED_DEFAULT;
++	
++    /* RTL8201N phy only supports 10/100 */
++    if (hw->phy_type == e1000_phy_rtl8201n)
++        hw->autoneg_advertised &= AUTONEG_ADVERTISE_10_100_ALL;
+ 
+ 	e_dbg("Reconfiguring auto-neg advertisement params\n");
+ 	ret_val = e1000_phy_setup_autoneg(hw);
+@@ -1523,8 +1550,8 @@
+ s32 e1000_phy_setup_autoneg(struct e1000_hw *hw)
+ {
+ 	s32 ret_val;
+-	u16 mii_autoneg_adv_reg;
+-	u16 mii_1000t_ctrl_reg;
++	u16 mii_autoneg_adv_reg = 0;
++	u16 mii_1000t_ctrl_reg = 0;
+ 
+ 	e_dbg("e1000_phy_setup_autoneg");
+ 
+@@ -1534,11 +1561,15 @@
+ 		return ret_val;
+ 
+ 	/* Read the MII 1000Base-T Control Register (Address 9). */
++    if (hw->phy_type == e1000_phy_rtl8201n) {
++        mii_1000t_ctrl_reg = 0;
++    }
++    else{
+ 	ret_val =
+-	    e1000_read_phy_reg(hw, PHY_1000T_CTRL, &mii_1000t_ctrl_reg);
++	    e1000_write_phy_reg(hw, PHY_1000T_CTRL, mii_1000t_ctrl_reg);
+ 	if (ret_val)
+ 		return ret_val;
+-
++    	}
+ 	/* Need to parse both autoneg_advertised and fc and set up
+ 	 * the appropriate PHY registers.  First we will parse for
+ 	 * autoneg_advertised software override.  Since we can advertise
+@@ -1649,11 +1680,15 @@
+ 		return ret_val;
+ 
+ 	e_dbg("Auto-Neg Advertising %x\n", mii_autoneg_adv_reg);
+-
++	
++    if (hw->phy_type == e1000_phy_rtl8201n) {
++        mii_1000t_ctrl_reg = 0;
++    }
++    else{
+ 	ret_val = e1000_write_phy_reg(hw, PHY_1000T_CTRL, mii_1000t_ctrl_reg);
+ 	if (ret_val)
+ 		return ret_val;
+-
++    	}
+ 	return E1000_SUCCESS;
+ }
+ 
+@@ -1943,6 +1978,26 @@
+ 	ctrl |= (E1000_CTRL_FRCSPD | E1000_CTRL_FRCDPX);
+ 	ctrl &= ~(E1000_CTRL_SPD_SEL | E1000_CTRL_ILOS);
+ 
++    switch (hw->phy_type) {
++    case e1000_phy_rtl8201n:
++        ret_val = e1000_read_phy_reg(hw, PHY_CTRL, &phy_data);
++        if (ret_val)
++            return ret_val;
++
++        if (phy_data & 0x0100)
++            ctrl |= E1000_CTRL_FD;
++        else
++            ctrl &= ~E1000_CTRL_FD;
++
++        if (phy_data & 0x2000)
++            ctrl |= E1000_CTRL_SPD_100;
++        else
++            ctrl |= E1000_CTRL_SPD_10;
++
++        e1000_config_collision_dist(hw);
++        break;
++
++    default:
+ 	/* Set up duplex in the Device Control and Transmit Control
+ 	 * registers depending on negotiated values.
+ 	 */
+@@ -1964,7 +2019,7 @@
+ 		ctrl |= E1000_CTRL_SPD_1000;
+ 	else if ((phy_data & M88E1000_PSSR_SPEED) == M88E1000_PSSR_100MBS)
+ 		ctrl |= E1000_CTRL_SPD_100;
+-
++    	}
+ 	/* Write the configured values back to the Device Control Reg. */
+ 	ew32(CTRL, ctrl);
+ 	return E1000_SUCCESS;
+@@ -2813,7 +2868,7 @@
+ {
+ 	u32 i;
+ 	u32 mdic = 0;
+-	const u32 phy_addr = 1;
++	const u32 phy_addr = (hw->mac_type == e1000_cegbe)?hw->phy_addr:1;
+ 
+ 	e_dbg("e1000_read_phy_reg_ex");
+ 
+@@ -2843,13 +2898,13 @@
+ 			}			
+             
+ 			if(mdic & INTEL_CE_GBE_MDIC_GO) {
+-				DEBUGOUT("MDI Read did not complete\n");
++				e_dbg("MDI Read did not complete\n");
+ 				return -E1000_ERR_PHY;
+ 			}
+ 			
+ 			mdic = readl(E1000_MDIO_STS);
+ 			if(mdic & INTEL_CE_GBE_MDIC_READ_ERROR) {
+-				DEBUGOUT("MDI Read Error\n");
++				e_dbg("MDI Read Error\n");
+ 			return -E1000_ERR_PHY;
+ 			}
+         	*phy_data = (uint16_t) mdic;
+@@ -2945,7 +3000,7 @@
+ {
+ 	u32 i;
+ 	u32 mdic = 0;
+-	const u32 phy_addr = 1;
++	const u32 phy_addr = (hw->mac_type == e1000_cegbe)?hw->phy_addr:1;
+ 
+ 	e_dbg("e1000_write_phy_reg_ex");
+ 
+@@ -2976,7 +3031,7 @@
+             }
+ 
+             if(mdic & INTEL_CE_GBE_MDIC_GO) {
+-                DEBUGOUT("MDI Write did not complete\n");
++                e_dbg("MDI Write did not complete\n");
+                 return -E1000_ERR_PHY;
+             }
+ 
+@@ -3177,7 +3232,7 @@
+ 			match = true;
+ 		break;
+ 	case e1000_cegbe:
+-        if(hw->phy_id == RTL8211B_PHY_ID) match = true;
++        if(hw->phy_id == RTL8211B_PHY_ID || hw->phy_id == RTL8201N_PHY_ID) match = true;
+         break;
+ 	case e1000_82541:
+ 	case e1000_82541_rev_2:
+@@ -3422,7 +3477,7 @@
+ 
+ 	if (hw->phy_type == e1000_phy_igp)
+ 		return e1000_phy_igp_get_info(hw, phy_info);
+-	else if(hw->phy_type == e1000_phy_rtl8211b)
++    else if(hw->phy_type == e1000_phy_rtl8211b || hw->phy_type == e1000_phy_rtl8201n)
+     	return E1000_SUCCESS;
+ 	else
+ 		return e1000_phy_m88_get_info(hw, phy_info);
+diff -Nur --exclude=.svn linux-2.6.35/drivers/net/e1000/e1000_hw.h linux-2.6.35/drivers/net/e1000_8201n/e1000_hw.h
+--- linux-2.6.35/drivers/net/e1000/e1000_hw.h	2010-10-02 08:09:14.000000000 +0800
++++ linux-2.6.35/drivers/net/e1000_8201n/e1000_hw.h	2010-10-02 08:09:00.000000000 +0800
+@@ -218,6 +218,7 @@
+     e1000_phy_m88 = 0,
+     e1000_phy_igp,
+     e1000_phy_rtl8211b,
++    e1000_phy_rtl8201n,
+     e1000_phy_undefined = 0xFF
+ } e1000_phy_type;
+ 
+@@ -1051,6 +1052,7 @@
+  * in more current versions of the 8254x. Despite the difference in location,
+  * the registers function in the same manner.
+  */
++#define E1000_82542_CTL_AUX  E1000_CTL_AUX
+ #define E1000_82542_CTRL     E1000_CTRL
+ #define E1000_82542_CTRL_DUP E1000_CTRL_DUP
+ #define E1000_82542_STATUS   E1000_STATUS
+@@ -2918,6 +2920,7 @@
+ #define M88E1111_I_PHY_ID  0x01410CC0
+ #define L1LXT971A_PHY_ID   0x001378E0
+ #define RTL8211B_PHY_ID   	0x001CC910
++#define RTL8201N_PHY_ID     0x8200
+ 
+ 
+ /* Bits...
+diff -Nur --exclude=.svn linux-2.6.35/drivers/net/e1000/e1000_main.c linux-2.6.35/drivers/net/e1000_8201n/e1000_main.c
+--- linux-2.6.35/drivers/net/e1000/e1000_main.c	2010-10-02 08:09:14.000000000 +0800
++++ linux-2.6.35/drivers/net/e1000_8201n/e1000_main.c	2010-10-02 08:09:00.000000000 +0800
+@@ -826,6 +826,7 @@
+ 	u16 eeprom_data = 0;
+ 	u16 eeprom_apme_mask = E1000_EEPROM_APME;
+ 	int bars, need_ioport;
++	u16 tmp= 0;
+ 
+ 	/* do not allocate ioport bars when not needed */
+ 	need_ioport = e1000_is_need_ioport(pdev);
+@@ -1062,6 +1063,22 @@
+ 	adapter->wol = adapter->eeprom_wol;
+ 	device_set_wakeup_enable(&adapter->pdev->dev, adapter->wol);
+ 
++       /*Auto detect PHY address*/
++       if (hw->mac_type == e1000_cegbe)
++       {
++               for (i = 0; i < 32; i++)
++          {
++               hw->phy_addr = i;
++              e1000_read_phy_reg(hw, PHY_ID2 ,&tmp);
++              if (tmp == 0 || tmp == 0xFF)
++               {
++               if (i == 31) goto err_eeprom;
++                continue;
++            }
++               else break;
++           }
++       }
++
+ 	/* reset the hardware with the new settings */
+ 	e1000_reset(adapter);
+ 
+@@ -2306,16 +2323,6 @@
+ 		link_active = hw->serdes_has_link;
+ 		break;
+ 	default:
+-		if (hw->mac_type == e1000_cegbe) {
+-			ret_val = e1000_read_phy_reg(&adapter->hw, PHY_STATUS, &link_up);
+-			ret_val = e1000_read_phy_reg(&adapter->hw, PHY_STATUS, &link_up);
+-	    	if (ret_val)
+-				DPRINTK(LINK, INFO, "Link status detection from PHY failed!\n");
+-
+-			link = link_up & MII_SR_LINK_STATUS;
+-			break;
+-		}
+-		else
+ 			break;
+ 	}
+ 
+@@ -2334,6 +2341,7 @@
+ 	struct e1000_tx_ring *txdr = adapter->tx_ring;
+ 	u32 link, tctl;
+ 	u16 link_up;
++	s32 ret_val;
+ 
+    /* 
+     * Test the PHY for link status on Intel CE SoC MAC.
+@@ -2344,7 +2352,7 @@
+ 		ret_val = e1000_read_phy_reg(&adapter->hw, PHY_STATUS, &link_up);
+ 		ret_val = e1000_read_phy_reg(&adapter->hw, PHY_STATUS, &link_up);
+     	if (ret_val)
+-			DPRINTK(LINK, INFO, "Link status detection from PHY failed!\n");
++			pr_info("Link status detection from PHY failed!\n");
+ 
+ 		link_up &= MII_SR_LINK_STATUS;
+        if(link_up != adapter->hw.cegbe_is_link_up)
+@@ -2357,6 +2365,14 @@
+ 	link = e1000_has_link(adapter);
+ 	if ((netif_carrier_ok(netdev)) && link)
+ 		goto link_up;
++        if (hw->mac_type == e1000_cegbe) {
++                        ret_val = e1000_read_phy_reg(&adapter->hw, PHY_STATUS, &link_up);
++                        ret_val = e1000_read_phy_reg(&adapter->hw, PHY_STATUS, &link_up);
++                if (ret_val)
++                                pr_info("Link status detection from PHY failed!\n");
++
++             link = link_up & MII_SR_LINK_STATUS;
++	}
+ 
+ 	if (link) {
+ 		if (!netif_carrier_ok(netdev)) {
+diff -Nur --exclude=.svn --exclude=.o linux-2.6.35/drivers/net/e1000/e1000_hw.c linux-2.6.35/drivers/net/e1000_8201e/e1000_hw.c
+--- linux-2.6.35/drivers/net/e1000/e1000_hw.c	2010-12-13 06:04:38.000000000 +0800
++++ linux-2.6.35/drivers/net/e1000_8201e/e1000_hw.c	2010-12-13 06:04:05.000000000 +0800
+@@ -26,7 +26,7 @@
+ 
+  */
+ /*******************************************************************************
+-  Includes Intel Corporation's changes/modifications dated: 08/2010.
++  Includes Intel Corporation's changes/modifications dated: 10/2010.
+   Changed/modified portions - Copyright @ 2010, Intel Corporation. All rights reserved.
+ *******************************************************************************/
+ 
+@@ -141,6 +141,9 @@
+     case RTL8201N_PHY_ID:
+         hw->phy_type = e1000_phy_rtl8201n;
+         break;
++    case RTL8201E_PHY_ID:
++        hw->phy_type = e1000_phy_rtl8201e;
++        break;
+ 	case IGP01E1000_I_PHY_ID:
+ 		if (hw->mac_type == e1000_82541 ||
+ 		    hw->mac_type == e1000_82541_rev_2 ||
+@@ -1309,6 +1312,7 @@
+ {
+ 	int32_t ret_val;
+     u32 ctrl_aux;
++    u16 phy_data;
+ 
+ 	switch(hw->phy_type)
+ 	{
+@@ -1333,16 +1337,46 @@
+             E1000_WRITE_FLUSH();
+             ret_val = e1000_copper_link_rtl_setup(hw);
+             if(ret_val)	{
+-				printk(" e1000_copper_link_rtl_setup failed!\n");
++		    printk(" e1000_copper_link_rtl_setup failed!\n");
+ 	            return ret_val;
+-			}
+-			break;
+-		default:
++	    }
++	    break;
++        case e1000_phy_rtl8201e:
++            //Set RMII mode
++            ctrl_aux = er32(CTL_AUX);
++            ctrl_aux |= E1000_CTL_AUX_RMII;
++            ew32(CTL_AUX, ctrl_aux);
++            E1000_WRITE_FLUSH();
++            //Disable the J/K bits requried for recieve
++            ctrl_aux = er32(CTL_AUX);
++            ctrl_aux |= 0x4;
++            ctrl_aux &= ~0x2;
++            ew32(CTL_AUX, ctrl_aux);
++            E1000_WRITE_FLUSH();
++            ret_val = e1000_copper_link_rtl_setup(hw);
++            if(ret_val)
++            {
++                printk(" e1000_copper_link_rtl_setup failed!\n");
++                return ret_val;
++            }
++            //RMII mode setting in 8201E PHY chip
++            ret_val = e1000_read_phy_reg(hw, PHY_TEST_REG, &phy_data);
++            if (ret_val)
++              return ret_val;
++
++            phy_data |= RMII_MODE_SET;
++            ret_val = e1000_write_phy_reg(hw, PHY_TEST_REG, phy_data);
++            if (ret_val)
++            {
++                printk(" 8201E RMII mode setup failed!\n");
++                return ret_val;
++            }
++        break;
++	default:
+         	e_dbg("Error Resetting the PHY\n");
+ 			return E1000_ERR_PHY_TYPE;
+ 	}
+-   
+-   return E1000_SUCCESS;
++  return E1000_SUCCESS;
+ }
+ 
+ 
+@@ -1561,7 +1595,7 @@
+ 		return ret_val;
+ 
+ 	/* Read the MII 1000Base-T Control Register (Address 9). */
+-    if (hw->phy_type == e1000_phy_rtl8201n) {
++    if (hw->phy_type == e1000_phy_rtl8201n || hw->phy_type == e1000_phy_rtl8201n) {
+         mii_1000t_ctrl_reg = 0;
+     }
+     else{
+@@ -1681,7 +1715,7 @@
+ 
+ 	e_dbg("Auto-Neg Advertising %x\n", mii_autoneg_adv_reg);
+ 	
+-    if (hw->phy_type == e1000_phy_rtl8201n) {
++    if (hw->phy_type == e1000_phy_rtl8201n || hw->phy_type == e1000_phy_rtl8201e) {
+         mii_1000t_ctrl_reg = 0;
+     }
+     else{
+@@ -1996,7 +2030,20 @@
+ 
+         e1000_config_collision_dist(hw);
+         break;
+-
++    case e1000_phy_rtl8201e:
++           ret_val = e1000_read_phy_reg(hw, PHY_CTRL, &phy_data);
++           if (ret_val)
++               return ret_val;
++           if (phy_data & 0x0100)
++               ctrl |= E1000_CTRL_FD;
++           else
++               ctrl &= ~E1000_CTRL_FD;
++           if (phy_data & 0x2000)
++               ctrl |= E1000_CTRL_SPD_100;
++           else
++               ctrl |= E1000_CTRL_SPD_10;
++           e1000_config_collision_dist(hw);
++           break;
+     default:
+ 	/* Set up duplex in the Device Control and Transmit Control
+ 	 * registers depending on negotiated values.
+@@ -3232,7 +3279,7 @@
+ 			match = true;
+ 		break;
+ 	case e1000_cegbe:
+-        if(hw->phy_id == RTL8211B_PHY_ID || hw->phy_id == RTL8201N_PHY_ID) match = true;
++        if(hw->phy_id == RTL8211B_PHY_ID || hw->phy_id == RTL8201N_PHY_ID || hw->phy_id == RTL8201E_PHY_ID) match = true;
+         break;
+ 	case e1000_82541:
+ 	case e1000_82541_rev_2:
+@@ -3477,7 +3524,7 @@
+ 
+ 	if (hw->phy_type == e1000_phy_igp)
+ 		return e1000_phy_igp_get_info(hw, phy_info);
+-    else if(hw->phy_type == e1000_phy_rtl8211b || hw->phy_type == e1000_phy_rtl8201n)
++    else if(hw->phy_type == e1000_phy_rtl8211b || hw->phy_type == e1000_phy_rtl8201n || hw->phy_type == e1000_phy_rtl8201e)
+     	return E1000_SUCCESS;
+ 	else
+ 		return e1000_phy_m88_get_info(hw, phy_info);
+diff -Nur --exclude=.svn --exclude=.o linux-2.6.35/drivers/net/e1000/e1000_hw.h linux-2.6.35/drivers/net/e1000_8201e/e1000_hw.h
+--- linux-2.6.35/drivers/net/e1000/e1000_hw.h	2010-12-13 06:04:38.000000000 +0800
++++ linux-2.6.35/drivers/net/e1000_8201e/e1000_hw.h	2010-12-13 06:04:05.000000000 +0800
+@@ -26,7 +26,7 @@
+ 
+ *******************************************************************************/
+ /*******************************************************************************
+-  Includes Intel Corporation's changes/modifications dated: 08/2010.
++  Includes Intel Corporation's changes/modifications dated: 10/2010.
+   Changed/modified portions - Copyright @ 2010, Intel Corporation. All rights reserved.
+ *******************************************************************************/
+ 
+@@ -219,6 +219,7 @@
+     e1000_phy_igp,
+     e1000_phy_rtl8211b,
+     e1000_phy_rtl8201n,
++    e1000_phy_rtl8201e,
+     e1000_phy_undefined = 0xFF
+ } e1000_phy_type;
+ 
+@@ -2509,6 +2510,7 @@
+ #define PHY_1000T_CTRL   0x09	/* 1000Base-T Control Reg */
+ #define PHY_1000T_STATUS 0x0A	/* 1000Base-T Status Reg */
+ #define PHY_EXT_STATUS   0x0F	/* Extended Status Reg */
++#define PHY_TEST_REG     0x19 /* Test Register */
+ 
+ #define MAX_PHY_REG_ADDRESS        0x1F	/* 5 bit address bus (0-0x1F) */
+ #define MAX_PHY_MULTI_PAGE_REG     0xF	/* Registers equal on all pages */
+@@ -2593,6 +2595,7 @@
+ #define MII_CR_SPEED_SELECT_LSB 0x2000	/* bits 6,13: 10=1000, 01=100, 00=10 */
+ #define MII_CR_LOOPBACK         0x4000	/* 0 = normal, 1 = loopback */
+ #define MII_CR_RESET            0x8000	/* 0 = normal, 1 = PHY reset */
++#define RMII_MODE_SET           0x0200  /* 0 = MII Mode, 1 = RMII Mode */
+ 
+ /* PHY Status Register */
+ #define MII_SR_EXTENDED_CAPS     0x0001	/* Extended register capabilities */
+@@ -2921,6 +2924,7 @@
+ #define L1LXT971A_PHY_ID   0x001378E0
+ #define RTL8211B_PHY_ID   	0x001CC910
+ #define RTL8201N_PHY_ID     0x8200
++#define RTL8201E_PHY_ID     0x001CC810
+ 
+ 
+ /* Bits...
+diff -Nur --exclude=.svn linux-2.6.35/drivers/net/e1000/e1000_hw.c linux-2.6.35/drivers/net/e1000_8211d/e1000_hw.c
+--- linux-2.6.35/drivers/net/e1000/e1000_hw.c	2011-01-04 02:09:55.000000000 +0800
++++ linux-2.6.35/drivers/net/e1000_8211d/e1000_hw.c	2011-01-04 02:12:00.000000000 +0800
+@@ -137,6 +137,8 @@
+ 		break;
+     case RTL8211B_PHY_ID:
+         hw->phy_type = e1000_phy_rtl8211b;
++	if (hw->phy_revision == RTL8211D_PHY_REV_ID)
++	        hw->phy_type = e1000_phy_rtl8211d;
+         break;
+     case RTL8201N_PHY_ID:
+         hw->phy_type = e1000_phy_rtl8201n;
+@@ -1286,10 +1288,10 @@
+ 	return E1000_SUCCESS;
+ }
+ /********************************************************************
+-+* Copper link setup for e1000_phy_rtl series.
+-+*
+-+* hw - Struct containing variables accessed by shared code
+-+*********************************************************************/
++* Copper link setup for e1000_phy_rtl series.
++*
++* hw - Struct containing variables accessed by shared code
++*********************************************************************/
+ static int32_t
+ e1000_copper_link_rtl_setup(struct e1000_hw *hw)
+  
+@@ -1323,6 +1325,13 @@
+                return ret_val;
+             }
+             break;
++		case e1000_phy_rtl8211d:
++	        ret_val = e1000_copper_link_rtl_setup(hw);
++            if(ret_val)	{
++               printk(" e1000_copper_link_rtl_setup failed!\n");
++               return ret_val;
++            }
++            break;
+         case e1000_phy_rtl8201n:
+             //Set RMII mode 
+             ctrl_aux = er32(CTL_AUX);
+@@ -1337,10 +1346,10 @@
+             E1000_WRITE_FLUSH();
+             ret_val = e1000_copper_link_rtl_setup(hw);
+             if(ret_val)	{
+-		    printk(" e1000_copper_link_rtl_setup failed!\n");
++				printk(" e1000_copper_link_rtl_setup failed!\n");
+ 	            return ret_val;
+-	    }
+-	    break;
++			}
++			break;
+         case e1000_phy_rtl8201e:
+             //Set RMII mode
+             ctrl_aux = er32(CTL_AUX);
+@@ -1371,12 +1380,12 @@
+                 printk(" 8201E RMII mode setup failed!\n");
+                 return ret_val;
+             }
+-        break;
+-	default:
++	        break;
++		default:
+         	e_dbg("Error Resetting the PHY\n");
+ 			return E1000_ERR_PHY_TYPE;
+ 	}
+-  return E1000_SUCCESS;
++   return E1000_SUCCESS;
+ }
+ 
+ 
+@@ -3279,8 +3288,8 @@
+ 			match = true;
+ 		break;
+ 	case e1000_cegbe:
+-        if(hw->phy_id == RTL8211B_PHY_ID || hw->phy_id == RTL8201N_PHY_ID || hw->phy_id == RTL8201E_PHY_ID) match = true;
+-        break;
++		if (hw->phy_id == RTL8211B_PHY_ID || hw->phy_id == RTL8201N_PHY_ID || hw->phy_id == RTL8201E_PHY_ID ) match = true;
++		break;//RTL 8211B and 8211D has the same PHY ID
+ 	case e1000_82541:
+ 	case e1000_82541_rev_2:
+ 	case e1000_82547:
+@@ -3524,7 +3533,7 @@
+ 
+ 	if (hw->phy_type == e1000_phy_igp)
+ 		return e1000_phy_igp_get_info(hw, phy_info);
+-    else if(hw->phy_type == e1000_phy_rtl8211b || hw->phy_type == e1000_phy_rtl8201n || hw->phy_type == e1000_phy_rtl8201e)
++    else if(hw->phy_type == e1000_phy_rtl8211b || hw->phy_type == e1000_phy_rtl8201n || hw->phy_type == e1000_phy_rtl8201e || hw->phy_type == e1000_phy_rtl8211d)
+     	return E1000_SUCCESS;
+ 	else
+ 		return e1000_phy_m88_get_info(hw, phy_info);
+diff -Nur --exclude=.svn linux-2.6.35/drivers/net/e1000/e1000_hw.h linux-2.6.35/drivers/net/e1000_8211d/e1000_hw.h
+--- linux-2.6.35/drivers/net/e1000/e1000_hw.h	2011-01-04 02:09:55.000000000 +0800
++++ linux-2.6.35/drivers/net/e1000_8211d/e1000_hw.h	2011-01-04 02:09:39.000000000 +0800
+@@ -220,6 +220,7 @@
+     e1000_phy_rtl8211b,
+     e1000_phy_rtl8201n,
+     e1000_phy_rtl8201e,
++    e1000_phy_rtl8211d,
+     e1000_phy_undefined = 0xFF
+ } e1000_phy_type;
+ 
+@@ -2923,8 +2924,11 @@
+ #define M88E1111_I_PHY_ID  0x01410CC0
+ #define L1LXT971A_PHY_ID   0x001378E0
+ #define RTL8211B_PHY_ID   	0x001CC910
++#define RTL8211B_PHY_REV_ID     0x0010//
+ #define RTL8201N_PHY_ID     0x8200
+ #define RTL8201E_PHY_ID     0x001CC810
++#define RTL8211D_PHY_ID     0x001CC910//It's the same as RTL8211B
++#define RTL8211D_PHY_REV_ID     0x0100
+ 
+ 
+ /* Bits...
+ 
+# hack for new compiler
+diff -Naur linux-2.6.35/include/linux/irq.h linux-2.6.35.patched/include/linux/irq.h
+--- linux-2.6.35/include/linux/irq.h	2010-08-09 23:41:47.000000000 +0200
++++ linux-2.6.35.patched/include/linux/irq.h	2016-01-29 03:01:28.784834840 +0100
+@@ -455,6 +455,8 @@
+ 	}
+ #endif
+ #endif
++    (void)gfp;
++
+ 	return true;
+ }
+ 
+# hack for new compiler
+diff -Naur linux-2.6.35/include/linux/pagemap.h linux-2.6.35.patched/include/linux/pagemap.h
+--- linux-2.6.35/include/linux/pagemap.h	2010-08-09 23:41:47.000000000 +0200
++++ linux-2.6.35.patched/include/linux/pagemap.h	2016-01-29 03:02:09.128836479 +0100
+@@ -426,6 +426,8 @@
+ 				((unsigned long)end & PAGE_MASK))
+ 		 	ret = __get_user(c, end);
+ 	}
++    (void)c;
++    
+ 	return ret;
+ }
+
