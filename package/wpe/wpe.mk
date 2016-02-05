@@ -4,12 +4,12 @@
 #
 ################################################################################
 
-WPE_VERSION = d49148bd6b5a341bd8512a91769f3951faf6e511
+WPE_VERSION = da1cfec7e5cab8d9219038bcd64646cf31c78f57
 WPE_SITE = $(call github,Metrological,WebKitForWayland,$(WPE_VERSION))
 
 WPE_INSTALL_STAGING = YES
 WPE_DEPENDENCIES = host-flex host-bison host-gperf host-ruby host-pkgconf zlib \
-	openssl pcre libgles libegl cairo freetype fontconfig harfbuzz icu libxml2 \
+	libgcrypt pcre libgles libegl cairo freetype fontconfig harfbuzz icu libxml2 \
 	libxslt sqlite libsoup jpeg libpng webp libinput libxkbcommon xkeyboard-config
 
 ifeq ($(BR2_PACKAGE_NINJA),y)
@@ -31,10 +31,18 @@ WPE_FLAGS = \
 	-DENABLE_GEOLOCATION=ON \
 	-DENABLE_DEVICE_ORIENTATION=ON \
 	-DENABLE_GAMEPAD=ON \
+	-DENABLE_SUBTLE_CRYPTO=ON \
+	-DENABLE_SHADOW_DOM=ON \
+	-DENABLE_FULLSCREEN_API=ON \
 	-DENABLE_NOTIFICATIONS=ON
 
 ifeq ($(BR2_PACKAGE_RPI_USERLAND),y)
+ifeq ($(BR2_PACKAGE_WAYLAND),y)
+WPE_DEPENDENCIES += wayland
+WPE_FLAGS += -DUSE_WPE_BACKEND_WAYLAND=ON -DUSE_WPE_BUFFER_MANAGEMENT_BCM_RPI=ON
+else
 WPE_FLAGS += -DUSE_WPE_BACKEND_BCM_RPI=ON
+endif
 else ifeq ($(BR2_PACKAGE_BCM_REFSW),y)
 WPE_FLAGS += -DUSE_WPE_BACKEND_BCM_NEXUS=ON
 else ifeq ($(BR2_PACKAGE_INTELCE_SDK),y)
@@ -67,8 +75,8 @@ endif
 ifeq ($(BR2_ENABLE_DEBUG),y)
 WPE_BUILD_TYPE = Debug
 WPE_EXTRA_FLAGS += \
-	-DCMAKE_C_FLAGS_RELEASE="-O0 -g -Wno-cast-align $(WPE_EXTRA_CFLAGS)" \
-	-DCMAKE_CXX_FLAGS_RELEASE="-O0 -g -Wno-cast-align $(WPE_EXTRA_CFLAGS)"
+	-DCMAKE_C_FLAGS_DEBUG="-O0 -g -Wno-cast-align $(WPE_EXTRA_CFLAGS)" \
+	-DCMAKE_CXX_FLAGS_DEBUG="-O0 -g -Wno-cast-align $(WPE_EXTRA_CFLAGS)"
 ifeq ($(BR2_BINUTILS_VERSION_2_25),y)
 WPE_EXTRA_FLAGS += \
 	-DDEBUG_FISSION=TRUE
