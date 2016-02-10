@@ -1,4 +1,4 @@
-config BR2_PACKAGE_GST_FLUENDO_ISMD
+config BR2_PACKAGE_GST1_FLUENDO_ISMD
 	bool "gst-fluendo-ismd"
 	select BR2_PACKAGE_INTELCE_AUDIO
 	select BR2_PACKAGE_INTELCE_BUFMON
@@ -27,5 +27,5 @@ config BR2_PACKAGE_GST_FLUENDO_ISMD
 		If you need support or have questions regarding those please contact Fluendo by
 		mail at support@fluendo.com.
 
-comment "gst-fluendo-ismd requires an Intelce SDK"
+comment "gst1-fluendo-ismd requires an Intelce SDK"
 	depends on !BR2_PACKAGE_INTELCE_SDK
