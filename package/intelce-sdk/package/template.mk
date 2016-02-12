@@ -12,35 +12,31 @@ INTELCE_@@PACKAGE_VAR@@_DEPENDENCIES = intelce-sdk
 INTELCE_@@PACKAGE_VAR@@_INSTALL_STAGING = YES
 
 INTELCE_@@PACKAGE_VAR@@_BUILD_ENV = \
-    BUILD_TARGET_DIR=${INTELCE_@@PACKAGE_VAR@@_DIR} \
-    BUILD_SMD_COMMOM=false 
-    
+	BUILD_TARGET_DIR=${INTELCE_@@PACKAGE_VAR@@_DIR} \
+	BUILD_SMD_COMMOM=false
+
 define INTELCE_@@PACKAGE_VAR@@_CONFIGURE_CMDS
-   
 endef
 
 define INTELCE_@@PACKAGE_VAR@@_BUILD_CMDS
-    if [ -d "${INTELCE_@@PACKAGE_VAR@@_DIR}/build_i686" ] ; then \
-       rm -rf "${INTELCE_@@PACKAGE_VAR@@_DIR}/build_i686"; \
-    fi
-
-    if [ -d "${INTELCE_@@PACKAGE_VAR@@_DIR}/binaries" ] ; then \
-       rm -rf "${INTELCE_@@PACKAGE_VAR@@_DIR}/binaries" ; \
-    fi
-    
-    if [ -d "${INTELCE_@@PACKAGE_VAR@@_DIR}/project_build_i686" ] ; then \
-       rm -rf "${INTELCE_@@PACKAGE_VAR@@_DIR}/project_build_i686" ; \
-    fi
-    
-    ${INTELCE_@@PACKAGE_VAR@@_BUILD_ENV} ${INTELCESDK-BUILD} @@PACKAGE_NAME@@
+	if [ -d "${INTELCE_@@PACKAGE_VAR@@_DIR}/build_i686" ]; then \
+		 rm -rf "${INTELCE_@@PACKAGE_VAR@@_DIR}/build_i686"; \
+	fi
+	if [ -d "${INTELCE_@@PACKAGE_VAR@@_DIR}/binaries" ]; then \
+		 rm -rf "${INTELCE_@@PACKAGE_VAR@@_DIR}/binaries"; \
+	fi
+	if [ -d "${INTELCE_@@PACKAGE_VAR@@_DIR}/project_build_i686" ]; then \
+		 rm -rf "${INTELCE_@@PACKAGE_VAR@@_DIR}/project_build_i686"; \
+	fi
+	${INTELCE_@@PACKAGE_VAR@@_BUILD_ENV} ${INTELCESDK-BUILD} @@PACKAGE_NAME@@
 endef
 
 define INTELCE_@@PACKAGE_VAR@@_INSTALL_STAGING_CMDS
-    $(call INTELCE_SDK_INSTALL_TO_STAGING,${INTELCE_@@PACKAGE_VAR@@_DIR}/build_i686/staging_dir) 
+	$(call INTELCE_SDK_INSTALL_TO_STAGING,${INTELCE_@@PACKAGE_VAR@@_DIR}/build_i686/staging_dir)
 endef
 
 define INTELCE_@@PACKAGE_VAR@@_INSTALL_TARGET_CMDS
-    $(call INTELCE_SDK_INSTALL_TO_TARGET,${INTELCE_@@PACKAGE_VAR@@_DIR}/project_build_i686/IntelCE/root)
+	$(call INTELCE_SDK_INSTALL_TO_TARGET,${INTELCE_@@PACKAGE_VAR@@_DIR}/project_build_i686/IntelCE/root)
 endef
 
 $(eval $(generic-package))
