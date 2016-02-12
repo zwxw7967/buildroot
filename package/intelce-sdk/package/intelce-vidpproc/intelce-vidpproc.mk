@@ -8,7 +8,13 @@ INTELCE_VIDPPROC_SITE = ${INTELCE_SDK_DIR}/empty
 INTELCE_VIDPPROC_SITE_METHOD = local
 INTELCE_VIDPPROC_LICENSE = PROPRIETARY
 INTELCE_VIDPPROC_REDISTRIBUTE = NO
-INTELCE_VIDPPROC_DEPENDENCIES = intelce-sdk intelce-system_utils intelce-pal intelce-auto_eas intelce-osal intelce-htuple intelce-common intelce-smd_tools intelce-sven linux intelce-core intelce-SMD_Common intelce-api intelce-vidpproc_fw intelce-platform_config intelce-fw_load intelce-intel_ce_pm
+INTELCE_VIDPPROC_DEPENDENCIES = intelce-sdk intelce-system_utils intelce-pal intelce-auto_eas intelce-osal intelce-htuple intelce-common intelce-smd_tools intelce-sven linux intelce-core intelce-SMD_Common intelce-api intelce-vidpproc_fw intelce-platform_config intelce-intel_ce_pm
+
+ifeq ($(BR2_PACKAGE_INTELCE_SDK_V36),y)
+    INTELCE_VIDPPROC_DEPENDENCIES += intelce-fw_load 
+endif
+
+
 INTELCE_VIDPPROC_INSTALL_STAGING = YES
 
 INTELCE_VIDPPROC_BUILD_ENV = \

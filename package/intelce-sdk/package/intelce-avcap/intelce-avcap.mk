@@ -8,8 +8,12 @@ INTELCE_AVCAP_SITE = ${INTELCE_SDK_DIR}/empty
 INTELCE_AVCAP_SITE_METHOD = local
 INTELCE_AVCAP_LICENSE = PROPRIETARY
 INTELCE_AVCAP_REDISTRIBUTE = NO
-INTELCE_AVCAP_DEPENDENCIES = intelce-sdk linux intelce-osal intelce-idl intelce-core intelce-platform_config intelce-display intelce-intel_ce_pm intelce-sven intelce-clock_control intelce-system_utils intelce-iosf
+INTELCE_AVCAP_DEPENDENCIES = intelce-sdk linux intelce-osal intelce-idl intelce-core intelce-platform_config intelce-display intelce-intel_ce_pm intelce-sven intelce-clock_control intelce-system_utils
 INTELCE_AVCAP_INSTALL_STAGING = YES
+
+ifeq ($(BR2_PACKAGE_INTELCE_SDK_V36),y)
+    INTELCE_AVCAP_DEPENDENCIES +=  intelce-iosf
+endif
 
 INTELCE_AVCAP_BUILD_ENV = \
     BUILD_TARGET_DIR=${INTELCE_AVCAP_DIR} \

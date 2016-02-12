@@ -8,7 +8,11 @@ INTELCE_INTEL_CE_PM_SITE = ${INTELCE_SDK_DIR}/empty
 INTELCE_INTEL_CE_PM_SITE_METHOD = local
 INTELCE_INTEL_CE_PM_LICENSE = PROPRIETARY
 INTELCE_INTEL_CE_PM_REDISTRIBUTE = NO
-INTELCE_INTEL_CE_PM_DEPENDENCIES = intelce-sdk linux intelce-pal intelce-osal intelce-clock_control intelce-system_utils intelce-8051_SDK intelce-iosf
+ifeq ($(BR2_PACKAGE_INTELCE_SDK_V21),y)
+    INTELCE_INTEL_CE_PM_DEPENDENCIES = intelce-sdk linux intelce-pal intelce-osal intelce-clock_control intelce-platform_config intelce-8051_SDK intelce-system_utils
+else ifeq ($(BR2_PACKAGE_INTELCE_SDK_V36),y)
+    INTELCE_INTEL_CE_PM_DEPENDENCIES = intelce-sdk linux intelce-pal intelce-osal intelce-clock_control intelce-system_utils intelce-8051_SDK intelce-iosf
+endif 
 INTELCE_INTEL_CE_PM_INSTALL_STAGING = YES
 
 INTELCE_INTEL_CE_PM_BUILD_ENV = \

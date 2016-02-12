@@ -8,16 +8,17 @@ INTELCE_FLASH_APPDATA_SITE = ${INTELCE_SDK_DIR}/empty
 INTELCE_FLASH_APPDATA_SITE_METHOD = local
 INTELCE_FLASH_APPDATA_LICENSE = PROPRIETARY
 INTELCE_FLASH_APPDATA_REDISTRIBUTE = NO
-INTELCE_FLASH_APPDATA_DEPENDENCIES = intelce-sdk intelce-flashtool intelce-nand_config intelce-osal intelce-pal intelce-mfhlib intelce-idtsal
+INTELCE_FLASH_APPDATA_DEPENDENCIES = intelce-sdk intelce-flashtool intelce-nand_config intelce-osal intelce-pal intelce-mfhlib
+
+ifeq ($(BR2_PACKAGE_INTELCE_SDK_V36),y)
+    INTELCE_FLASH_APPDATA_DEPENDENCIES +=  intelce-idtsal
+endif
+
 INTELCE_FLASH_APPDATA_INSTALL_STAGING = YES
 
 INTELCE_FLASH_APPDATA_BUILD_ENV = \
     BUILD_TARGET_DIR=${INTELCE_FLASH_APPDATA_DIR} \
     BUILD_SMD_COMMOM=false 
-    
-define INTELCE_FLASH_APPDATA_CONFIGURE_CMDS
-   
-endef
 
 define INTELCE_FLASH_APPDATA_BUILD_CMDS
     if [ -d "${INTELCE_FLASH_APPDATA_DIR}/build_i686" ] ; then \

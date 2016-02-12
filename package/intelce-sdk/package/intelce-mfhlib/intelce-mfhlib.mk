@@ -8,7 +8,11 @@ INTELCE_MFHLIB_SITE = ${INTELCE_SDK_DIR}/empty
 INTELCE_MFHLIB_SITE_METHOD = local
 INTELCE_MFHLIB_LICENSE = PROPRIETARY
 INTELCE_MFHLIB_REDISTRIBUTE = NO
-INTELCE_MFHLIB_DEPENDENCIES = intelce-sdk linux intelce-osal intelce-pal intelce-nand_config intelce-flashtool openssl intelce-idtsal
+ifeq ($(BR2_PACKAGE_INTELCE_SDK_V21),y)
+    INTELCE_MFHLIB_DEPENDENCIES = intelce-sdk linux intelce-osal intelce-pal intelce-nand_config intelce-flashtool openssl
+else ifeq ($(BR2_PACKAGE_INTELCE_SDK_V36),y)
+    INTELCE_MFHLIB_DEPENDENCIES = intelce-sdk linux intelce-osal intelce-pal intelce-nand_config intelce-flashtool openssl intelce-idtsal
+endif
 INTELCE_MFHLIB_INSTALL_STAGING = YES
 
 INTELCE_MFHLIB_BUILD_ENV = \

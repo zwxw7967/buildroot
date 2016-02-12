@@ -8,16 +8,17 @@ INTELCE_DISPLAY_SITE = ${INTELCE_SDK_DIR}/empty
 INTELCE_DISPLAY_SITE_METHOD = local
 INTELCE_DISPLAY_LICENSE = PROPRIETARY
 INTELCE_DISPLAY_REDISTRIBUTE = NO
-INTELCE_DISPLAY_DEPENDENCIES = intelce-sdk intelce-api intelce-auto_eas intelce-clock_control intelce-core intelce-hdmi_hdcp intelce-idl linux intelce-osal intelce-pal intelce-platform_config intelce-system_utils intelce-sven intelce-generic_timer intelce-iosf freetype libpng zlib intelce-intel_ce_pm
 INTELCE_DISPLAY_INSTALL_STAGING = YES
 
 INTELCE_DISPLAY_BUILD_ENV = \
     BUILD_TARGET_DIR=${INTELCE_DISPLAY_DIR} \
     BUILD_SMD_COMMOM=false 
     
-define INTELCE_DISPLAY_CONFIGURE_CMDS
-   
-endef
+ifeq ($(BR2_PACKAGE_INTELCE_SDK_V21),y)
+    INTELCE_DISPLAY_DEPENDENCIES = intelce-sdk intelce-auto_eas intelce-clock_control intelce-hdmi_hdcp intelce-idl intelce-intel_ce_pm linux intelce-osal intelce-pal intelce-platform_config intelce-sec intelce-system_utils intelce-sven intelce-generic_timer freetype libpng zlib intelce-intel_ce_pm
+else ifeq ($(BR2_PACKAGE_INTELCE_SDK_V36),y)
+    INTELCE_DISPLAY_DEPENDENCIES = intelce-sdk intelce-api intelce-auto_eas intelce-clock_control intelce-core intelce-hdmi_hdcp intelce-idl linux intelce-osal intelce-pal intelce-platform_config intelce-system_utils intelce-sven intelce-generic_timer intelce-iosf freetype libpng zlib intelce-intel_ce_pm
+endif
 
 define INTELCE_DISPLAY_BUILD_CMDS
     if [ -d "${INTELCE_DISPLAY_DIR}/build_i686" ] ; then \

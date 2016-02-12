@@ -8,8 +8,18 @@ INTELCE_VIDPPROC_FW_SITE = ${INTELCE_SDK_DIR}/empty
 INTELCE_VIDPPROC_FW_SITE_METHOD = local
 INTELCE_VIDPPROC_FW_LICENSE = PROPRIETARY
 INTELCE_VIDPPROC_FW_REDISTRIBUTE = NO
-INTELCE_VIDPPROC_FW_DEPENDENCIES = intelce-sdk intelce-pal intelce-auto_eas intelce-osal linux intelce-platform_config intelce-smd_tools intelce-sven intelce-core intelce-SMD_Common intelce-htuple intelce-fw_load
+INTELCE_VIDPPROC_FW_DEPENDENCIES = intelce-sdk intelce-pal intelce-auto_eas intelce-osal linux intelce-platform_config intelce-smd_tools intelce-sven intelce-core intelce-SMD_Common intelce-htuple
 INTELCE_VIDPPROC_FW_INSTALL_STAGING = YES
+
+ifeq ($(BR2_PACKAGE_INTELCE_SDK_V36),y)
+    INTELCE_VIDPPROC_FW_DEPENDENCIES += intelce-fw_load 
+endif
+
+
+ifeq ($(BR2_PACKAGE_INTELCE_SDK_V21),y)
+    INTELCE_VIDPPROC_FW_DEPENDENCIES += intelce-ipclib
+endif
+
 
 INTELCE_VIDPPROC_FW_BUILD_ENV = \
     BUILD_TARGET_DIR=${INTELCE_VIDPPROC_FW_DIR} \

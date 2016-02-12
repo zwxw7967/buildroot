@@ -9,7 +9,10 @@ export LOGGING_DIR="${BUILD_TARGET_DIR}/log"
 export BUILD_DEST="${BUILD_ROOT_DIR}/build_i686/staging_dir"
 export TARGETDEST="${BUILD_ROOT}/binaries/IntelCE"
 export FSROOT="${BUILD_ROOT}/project_build_i686/IntelCE/root"
-export KERNEL_VER="linux-3.12.17"
+export KERNEL_VER="linux-2.6.35"
+
+export PATH="${HOST_DIR}/usr/bin:${PATH}" 
+
 # If STAGING_KERNEL_BUILDDIR is not defined, then we are building with OE dizzy
 # and the kernel build directory is the same as the kernel source directory.
 # If STAGING_KERNEL_BUILDDIR is defined, then we are building with OE fido (or
@@ -114,49 +117,21 @@ BUILD_TARGET="$1"
 # BUILD_TARGET here is expected to be an Intel SDK build target, ie one of the
 # directories under packages (e.g. osal, pal, transcoder_common, viddec_fw, etc)
 # and not an OE build target (which all have the prefix "intelce-").
-stamp=`date +%Y%M%d_%H%M%S`
 
-echo "${LOGGING_DIR}/${BUILD_TARGET}.${stamp}.log.txt"
+stamp=`date +%Y%m%d_%H%M%S`
+log_file="${LOGGING_DIR}/${BUILD_TARGET}.${stamp}.log.txt"
 
-if [ "x${BUILD_SMD_COMMOM}" = "xtrue" ]
+# make sure that a build_done stamp is available
+if [ ! -f  "${BUILD_ROOT_DIR}/build_done" ] 
 then
-    make ${MAKEOPTS} -C ${BUILD_ROOT} SMD_Common
+    touch "${BUILD_ROOT_DIR}/build_done"
 fi
 
-if [ "x${BUILD_SMD_TOOLS}" = "xtrue" ]
-then
-   mkdir -p ${BUILD_ROOT_DIR}/build_i686/staging_dir/internal/
-   cp -av ${BUILD_ROOT_DIR}/package/smd_tools/smd_tools-None-SRC-36.0.14495.347773.tgz_unpacked/project_build_i686/IntelCE/smd_tools-36.0.14495.347773/autoapi/src/* ${BUILD_ROOT_DIR}/build_i686/staging_dir/internal/
-fi
-
-if [ "x${BUILD_IDTS_COMMON}" = "xtrue" ]
-then
-   	mkdir -p ${BUILD_ROOT_DIR}/build_i686/staging_dir/idts_common
-	cp -av ${BUILD_ROOT_DIR}/package/idts_common/idts_common-INTEL-DEV-36.0.14495.347773.tgz_unpacked/build_i686/staging_dir/idts_common/* ${BUILD_ROOT_DIR}/build_i686/staging_dir/idts_common/
-fi
-
-if [ "x${MAKE_STAGING_LIB_DIR}" = "xtrue" ]
-then
-   	mkdir -p ${BUILD_ROOT_DIR}/build_i686/staging_dir/lib
-fi
-
-
-make ${MAKEOPTS} -C ${BUILD_ROOT} ${BUILD_TARGET} &> "${LOGGING_DIR}/${BUILD_TARGET}.${stamp}.log.txt"
+# build!
+make ${MAKEOPTS} -C ${BUILD_ROOT} ${BUILD_TARGET} &> ${log_file}
 # ----------------------------------------------------------------------------
-# Move result to component
+# Copy result to component
 # ----------------------------------------------------------------------------
-if [ -d "${BUILD_ROOT_DIR}/build_i686" ] 
-then 
-    mv  "${BUILD_ROOT_DIR}/build_i686" "${BUILD_TARGET_DIR}"
-fi
-
-if [ -d "${BUILD_ROOT_DIR}/binaries" ] 
-then
-    mv  "${BUILD_ROOT_DIR}/binaries" "${BUILD_TARGET_DIR}"
-fi
-    
-if [ -d "${BUILD_ROOT_DIR}/project_build_i686" ] 
-then 
-    mv  "${BUILD_ROOT_DIR}/project_build_i686" "${BUILD_TARGET_DIR}"
-fi
-    
+cd "${BUILD_ROOT_DIR}" && find . -mindepth 1 -type f -anewer "${BUILD_ROOT_DIR}/build_done" -exec cp -av --parents {} "${BUILD_TARGET_DIR}" \;
+# set new build done stamp
+touch "${BUILD_ROOT_DIR}/build_done"

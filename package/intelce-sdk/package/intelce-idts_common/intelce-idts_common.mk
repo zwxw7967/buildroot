@@ -8,7 +8,11 @@ INTELCE_IDTS_COMMON_SITE = ${INTELCE_SDK_DIR}/empty
 INTELCE_IDTS_COMMON_SITE_METHOD = local
 INTELCE_IDTS_COMMON_LICENSE = PROPRIETARY
 INTELCE_IDTS_COMMON_REDISTRIBUTE = NO
-INTELCE_IDTS_COMMON_DEPENDENCIES = intelce-sdk intelce-pal intelce-osal intelce-idl openssl intelce-idtsal
+ifeq ($(BR2_PACKAGE_INTELCE_SDK_V21),y)
+    INTELCE_IDTS_COMMON_DEPENDENCIES = intelce-sdk intelce-pal intelce-osal intelce-idl openssl intelce-graphics
+else ifeq ($(BR2_PACKAGE_INTELCE_SDK_V36),y)
+    INTELCE_IDTS_COMMON_DEPENDENCIES = intelce-sdk intelce-pal intelce-osal intelce-idl openssl intelce-idtsal
+endif
 INTELCE_IDTS_COMMON_INSTALL_STAGING = YES
 
 INTELCE_IDTS_COMMON_BUILD_ENV = \

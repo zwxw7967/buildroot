@@ -8,7 +8,11 @@ INTELCE_GSVEN_SITE = ${INTELCE_SDK_DIR}/empty
 INTELCE_GSVEN_SITE_METHOD = local
 INTELCE_GSVEN_LICENSE = PROPRIETARY
 INTELCE_GSVEN_REDISTRIBUTE = NO
-INTELCE_GSVEN_DEPENDENCIES = intelce-sdk intelce-htuple intelce-auto_eas intelce-osal intelce-pal intelce-platform_config intelce-SMD_Common intelce-sven intelce-LibVNCServer intelce-iosf
+ifeq ($(BR2_PACKAGE_INTELCE_SDK_V21),y)
+    INTELCE_GSVEN_DEPENDENCIES = intelce-sdk intelce-htuple intelce-auto_eas intelce-osal intelce-pal intelce-platform_config intelce-SMD_Common intelce-sven intelce-LibVNCServer
+else ifeq ($(BR2_PACKAGE_INTELCE_SDK_V36),y)
+    INTELCE_GSVEN_DEPENDENCIES = intelce-sdk intelce-htuple intelce-auto_eas intelce-osal intelce-pal intelce-platform_config intelce-SMD_Common intelce-sven intelce-LibVNCServer intelce-iosf
+endif 
 INTELCE_GSVEN_INSTALL_STAGING = YES
 
 INTELCE_GSVEN_BUILD_ENV = \
