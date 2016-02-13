@@ -12,6 +12,7 @@ endif
 
 INTELCE_SDK_SITE_METHOD = git
 INTELCE_SDK_SITE = git@github.com:Metrological/intel-sdk.git
+INTELCE_SDK_DEPENDENCIES = host-doxygen
 
 define INTELCE_SDK_PREPARE_ENVIRONMENT
 	mkdir -p ${INTELCE_SDK_DIR}/empty

@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e -x
+set -e
+# set -x
 # ----------------------------------------------------------------------------
 # Set-up exports required by buildroot
 # Mostly replacements for toolchain/IntelCE-toolchain/Makefile.in (which isn't included if using external toolchain)
@@ -133,5 +134,7 @@ make ${MAKEOPTS} -C ${BUILD_ROOT} ${BUILD_TARGET} &> ${log_file}
 # Copy result to component
 # ----------------------------------------------------------------------------
 cd "${BUILD_ROOT_DIR}" && find . -mindepth 1 -type f -anewer "${BUILD_ROOT_DIR}/build_done" -exec cp -av --parents {} "${BUILD_TARGET_DIR}" \;
+# not too fast now 
+sleep 1
 # set new build done stamp
 touch "${BUILD_ROOT_DIR}/build_done"
