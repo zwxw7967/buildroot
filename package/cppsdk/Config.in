@@ -21,9 +21,7 @@ config BR2_PACKAGE_CPPSDK_DEBUG
 
 config BR2_PACKAGE_CPPSDK_GENERICS
 	bool "generics"	
-	select BR2_PACKAGE_INTELCE_SDK
-	select BR2_PACKAGE_INTELCE_COSAI
-	select BR2_PACKAGE_INTELCE_OSAL
+	select BR2_PACKAGE_INTELCE_OSAL if BR2_PACKAGE_INTELCE_SDK
 	help
 	  Base set of platform abstraction wrappers, part opf cppsdk.
 	  Minimal set, required to use any part of this library.
