@@ -8,7 +8,7 @@ INTELCE_GRAPHICS_SITE = ${INTELCE_SDK_DIR}/empty
 INTELCE_GRAPHICS_SITE_METHOD = local
 INTELCE_GRAPHICS_LICENSE = PROPRIETARY
 INTELCE_GRAPHICS_REDISTRIBUTE = NO
-INTELCE_GRAPHICS_DEPENDENCIES = intelce-sdk linux intelce-osal intelce-pal intelce-display host-bison host-flex libdrm
+INTELCE_GRAPHICS_DEPENDENCIES = intelce-sdk linux intelce-osal intelce-pal intelce-display host-bison host-flex 
 INTELCE_GRAPHICS_INSTALL_STAGING = YES
 
 INTELCE_GRAPHICS_BUILD_ENV = \
