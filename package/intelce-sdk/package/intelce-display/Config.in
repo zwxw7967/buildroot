@@ -24,4 +24,5 @@ help
 None
 
 config BR2_PACKAGE_PROVIDES_LIBGDL
+    string
 	default "intelce-display"
