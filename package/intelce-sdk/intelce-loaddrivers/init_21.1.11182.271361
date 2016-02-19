@@ -1,0 +1,48 @@
+#!/bin/sh
+# set -x
+# set -e
+[ "$1" = "start" ] || exit 0
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+echo "### Start OSAL"
+/etc/init.d/osal start
+echo "### Start PAL"
+/etc/init.d/pal start
+echo "### Start Platform Config"
+/etc/init.d/platform_config  start
+echo "### Start System Utils"
+/etc/init.d/system_utils  start
+echo "### Start SVEN"
+/etc/init.d/sven  start
+echo "### Start IDL"
+/etc/init.d/idl   start
+echo "### Start Clock Control"
+/etc/init.d/clock_control start
+echo "### Start Intel CE PM"
+/etc/init.d/intel_ce_pm start
+echo "### Start SMD Core"
+/etc/init.d/smd_core start
+echo "### Start Generic Timer"
+/etc/init.d/gentimer start
+echo "### Start SEC"
+/etc/init.d/sec start
+echo "### Start Display"
+/etc/init.d/display start
+echo "### Start SMD"
+/etc/init.d/smd start
+echo "### Start HDMI"
+/etc/init.d/hdmi start
+echo "### Start EDL"
+/etc/init.d/edl start
+echo "### Start Graphics"
+/etc/init.d/graphics start
+echo "### Start Init PIC UART"
+/etc/init.d/init_pic_uart start
+echo "### Start DONE"
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# echo "### Setup display mode"
+# bin/tvmode 720p
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+
