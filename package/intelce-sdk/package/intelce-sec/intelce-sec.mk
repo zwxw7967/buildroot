@@ -37,10 +37,12 @@ endef
 
 define INTELCE_SEC_INSTALL_STAGING_CMDS
     $(call INTELCE_SDK_INSTALL_TO_STAGING,${INTELCE_SEC_DIR}/build_i686/staging_dir) 
+	$(INSTALL) -m 644 ${INTELCE_SEC_DIR}/build_i686/staging_dir/lib/libsec.so $(STAGING_DIR)/lib/libsec.so
 endef
 
 define INTELCE_SEC_INSTALL_TARGET_CMDS
     $(call INTELCE_SDK_INSTALL_TO_TARGET,${INTELCE_SEC_DIR}/project_build_i686/IntelCE/root)
+	$(INSTALL) -m 644 ${INTELCE_SEC_DIR}/build_i686/staging_dir/lib/libsec.so $(TARGET_DIR)/lib/libsec.so
 endef
 
 $(eval $(generic-package))

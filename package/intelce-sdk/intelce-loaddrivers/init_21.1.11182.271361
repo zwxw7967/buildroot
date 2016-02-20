@@ -9,13 +9,13 @@ echo "### Start OSAL"
 echo "### Start PAL"
 /etc/init.d/pal start
 echo "### Start Platform Config"
-/etc/init.d/platform_config  start
+/etc/init.d/platform_config start
 echo "### Start System Utils"
-/etc/init.d/system_utils  start
+/etc/init.d/system_utils start
 echo "### Start SVEN"
-/etc/init.d/sven  start
+/etc/init.d/sven start
 echo "### Start IDL"
-/etc/init.d/idl   start
+/etc/init.d/idl start
 echo "### Start Clock Control"
 /etc/init.d/clock_control start
 echo "### Start Intel CE PM"
@@ -41,8 +41,45 @@ echo "### Start Init PIC UART"
 echo "### Start DONE"
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-# echo "### Setup display mode"
-# bin/tvmode 720p
+# Set default HDCP background color as black
+# Bug 11011 - [AV Interface] Red is dispalyed for a short time when STB power off/on and exit from M/W standby
+/bin/gdl_samples/portattrs -port 2 -set 7 8392832
+# Disable GCP Mute, which effects to TV, when Power off as GCP Mute on
+/bin/gdl_samples/portattrs -port 2 -set 55 0 
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# TODO: enable USB
+# /usr/dtsbin/gpio write -number 78 -output -data 1 > /dev/null
+# /usr/dtsbin/gpio write -number 79 -output -data 1 > /dev/null
+#
+# since SMT-G7400 PCS01E board (CVBS : 83, high)
+# if [ ${HW_REVISION} -ge 4 ]; then
+#	 /usr/dtsbin/gpio write -number 83 -output -data 1 > /dev/null
+# fi
+# since SMT-G7400 PCS01F board (port 0: 460mV, port1: 520mV)
+# final board (port 0: 520mV, port1: 500mV)
+# if [ ${HW_REVISION} -ge 11 ]; then
+#	echo "USB PHY drive strength port0 slope 100 amp 420mV, port1 slope 100 amp 420mV"
+#	/usr/dtsbin/memory write -width 4 -addr 0xdf818000 -data 0xc0003c0c > /dev/null
+# elif [ ${HW_REVISION} -ge 7 ]; then
+#	echo "USB PHY drive strength port0 slope 011 amp 480mV, port1 slope 100 amp 460mV"
+#	/usr/dtsbin/memory write -width 4 -addr 0xdf818000 -data 0xc0003971 > /dev/null
+# elif [ ${HW_REVISION} -ge 5 ]; then
+#	/usr/dtsbin/memory write -width 4 -addr 0xdf818000 -data 0xc0003cfa > /dev/null
+# fi
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------        
+echo "### Temperature check"
+thermal -r
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# Temp solution to disable HDCP on 7401
+echo "### Disabling HDCP"
+/bin/gdl_samples/portattrs -port 2 -set 0 0
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+echo "### Setup display mode"
+bin/tvmode 720p
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
 

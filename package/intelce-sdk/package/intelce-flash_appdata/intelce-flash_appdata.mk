@@ -37,11 +37,15 @@ define INTELCE_FLASH_APPDATA_BUILD_CMDS
 endef
 
 define INTELCE_FLASH_APPDATA_INSTALL_STAGING_CMDS
-    $(call INTELCE_SDK_INSTALL_TO_STAGING,${INTELCE_FLASH_APPDATA_DIR}/build_i686/staging_dir) 
+    $(call INTELCE_SDK_INSTALL_TO_STAGING,${INTELCE_FLASH_APPDATA_DIR}/build_i686/staging_dir)
+	$(INSTALL) -m 644 ${INTELCE_FLASH_APPDATA_DIR}/build_i686/staging_dir/lib/libnand_config.so $(STAGING_DIR)/lib/libnand_config.so
+	$(INSTALL) -m 644 ${INTELCE_FLASH_APPDATA_DIR}/build_i686/staging_dir/lib/libmfh.so $(STAGING_DIR)/lib/libmfh.so
 endef
 
 define INTELCE_FLASH_APPDATA_INSTALL_TARGET_CMDS
     $(call INTELCE_SDK_INSTALL_TO_TARGET,${INTELCE_FLASH_APPDATA_DIR}/project_build_i686/IntelCE/root)
+	$(INSTALL) -m 644 ${INTELCE_FLASH_APPDATA_DIR}/build_i686/staging_dir/lib/libnand_config.so $(TARGET_DIR)/lib/libnand_config.so
+	$(INSTALL) -m 644 ${INTELCE_FLASH_APPDATA_DIR}/build_i686/staging_dir/lib/libmfh.so $(TARGET_DIR)/lib/libmfh.so
 endef
 
 $(eval $(generic-package))
