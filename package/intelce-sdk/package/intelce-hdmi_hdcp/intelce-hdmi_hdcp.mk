@@ -37,10 +37,12 @@ endef
 
 define INTELCE_HDMI_HDCP_INSTALL_STAGING_CMDS
     $(call INTELCE_SDK_INSTALL_TO_STAGING,${INTELCE_HDMI_HDCP_DIR}/build_i686/staging_dir) 
+	$(INSTALL) -m 644 ${INTELCE_HDMI_HDCP_DIR}/build_i686/staging_dir/lib/libsec_hdcp.so $(STAGING_DIR)/lib/libsec_hdcp.so
 endef
 
 define INTELCE_HDMI_HDCP_INSTALL_TARGET_CMDS
     $(call INTELCE_SDK_INSTALL_TO_TARGET,${INTELCE_HDMI_HDCP_DIR}/project_build_i686/IntelCE/root)
+	$(INSTALL) -m 644 ${INTELCE_HDMI_HDCP_DIR}/build_i686/staging_dir/lib/libsec_hdcp.so $(TARGET_DIR)/lib/libsec_hdcp.so
 endef
 
 $(eval $(generic-package))
