@@ -5,9 +5,9 @@
 ################################################################################
 
 ifeq ($(BR2_PACKAGE_INTELCE_SDK_V36),y)
-    INTELCE_SDK_VERSION = v36.0.14495.347773
+    INTELCE_SDK_VERSION = eef93375337a2aa2252d2b828d4b2cfa6db6b658
 else ifeq ($(BR2_PACKAGE_INTELCE_SDK_V21),y)
-    INTELCE_SDK_VERSION = v21.1.11182.271361
+    INTELCE_SDK_VERSION = 78fc9325b4a3d85eadb450f4bb7b758c4a6be1f4
 endif
 
 INTELCE_SDK_SITE_METHOD = git
