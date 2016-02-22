@@ -31,6 +31,10 @@ endif
 
 source  package/intelce-sdk/package/intelce-demux/Config.in
 
+if BR2_PACKAGE_INTELCE_SDK_V21
+source  package/intelce-sdk/package/intelce-DirectFB_1_4/Config.in
+endif
+
 if BR2_PACKAGE_INTELCE_SDK_V36
 source  package/intelce-sdk/package/intelce-devmem/Config.in
 endif
@@ -80,6 +84,7 @@ endif
 
 if BR2_PACKAGE_INTELCE_SDK_V21
 source  package/intelce-sdk/package/intelce-ipclib/Config.in
+
 endif
 
 source  package/intelce-sdk/package/intelce-itstore/Config.in
