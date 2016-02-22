@@ -4,6 +4,7 @@ menu "Target packages"
 	source "package/skeleton/Config.in"
 
 menu "Audio and video applications"
+    source "package/qttests/Config.in"
 	source "package/alsa-utils/Config.in"
 	source "package/aumix/Config.in"
 	source "package/bellagio/Config.in"
