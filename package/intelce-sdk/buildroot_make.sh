@@ -54,9 +54,9 @@ export TARGETM4="false"
 export TARGETYACC="false"
 
 # ----------------------------------------------------------------------------
-export INTELCE_HEADERS="${TARGET_SYSROOT}/usr/include/intelce" 
-export INTELCE_USERSPACE_PRIVATE_LIBS="${TARGET_SYSROOT}/usr/lib/intelce"
-export INTELCE_KERNELSPACE_PRIVATE_LIBS="${TARGET_SYSROOT}/lib/kernel/intelce"
+export INTELCE_HEADERS="${TARGET_SYSROOT}/usr/include" 
+export INTELCE_USERSPACE_PRIVATE_LIBS="${TARGET_SYSROOT}/usr/lib"
+export INTELCE_KERNELSPACE_PRIVATE_LIBS="${TARGET_SYSROOT}/lib"
 
 export INTELCE_FREETYPE2_INCLUDE_PATH="${TARGET_SYSROOT}/usr/include/freetype2"
 export INTELCE_OPENGLES_INCLUDE_PATH="${TARGET_SYSROOT}/usr/include"
