@@ -1,0 +1,9 @@
+Typical usage
+
+1. Run smem on the target system and save the output:
+    smem > memorycapture.tar 
+
+2. Copy the output to another machine and run smem on it:
+    smem -S memorycapture.tar
+
+On Debian based system an smem version can be install with apt-get install smem

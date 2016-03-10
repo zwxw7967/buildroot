@@ -1,0 +1,20 @@
+--- /dev/null
++++ b/Makefile
+@@ -0,0 +1,17 @@
++LIBS   := 
++TARGET := smem
++
++SOURCES   := \
++	smemcap.c
++
++OBJECTS = $(SOURCES:%.c=%.o)
++
++all: $(TARGET)
++
++%.o : %.c
++	$(CC) -fPIC $(CFLAGS) -o $@ -c $<
++
++$(TARGET): $(OBJECTS)
++	$(CC) $(CFLAGS) $(LIBS) -o $@ $^
++
++clean:
