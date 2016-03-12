@@ -124,16 +124,16 @@ config BR2_PACKAGE_PLUGIN_DIALSERVER
 	help
 	  A plugin that implements DIscovery And Launch protocol specification
 
-config BR2_PACKAGE_PLUGIN_HORIZONCOMMUNICATOR
-	bool "horizoncommunicator"
+config BR2_PACKAGE_PLUGIN_MQCOMMUNICATOR
+	bool "communicator"
 	depends on BR2_PACKAGE_CPPSDK_MQC
 	help
-	  A plugin that responds to MQC commands from Horizon monitor
+	  A plugin that responds to MQC commands
 
 config BR2_PACKAGE_WEBBRIDGE_TESTMQC
 	bool "mqctestclient"
 	depends on BR2_PACKAGE_CPPSDK_MQC
-	depends on BR2_PACKAGE_PLUGIN_HORIZONCOMMUNICATOR
+	depends on BR2_PACKAGE_PLUGIN_MQCOMMUNICATOR
 	help
 	  A stand-alone test application sending MQC messages to webbridge
 
