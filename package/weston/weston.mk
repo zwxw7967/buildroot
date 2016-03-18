@@ -19,7 +19,6 @@ WESTON_CONF_OPTS = \
 	--disable-simple-egl-clients \
 	--disable-xwayland \
 	--disable-x11-compositor \
-	--disable-drm-compositor \
 	--disable-wayland-compositor \
 	--disable-headless-compositor \
 	--disable-weston-launch \
