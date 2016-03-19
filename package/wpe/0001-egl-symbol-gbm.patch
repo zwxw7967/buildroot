@@ -1,0 +1,35 @@
+diff --git a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamerBase.cpp b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamerBase.cpp
+index a660b6d..78e0272 100644
+--- a/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamerBase.cpp
++++ b/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamerBase.cpp
+@@ -660,9 +660,17 @@ void MediaPlayerPrivateGStreamerBase::updateTexture(BitmapTextureGL& texture, Gs
+                     glActiveTexture (GL_TEXTURE2);
+ 
+                 glBindTexture (GL_TEXTURE_2D, texture.id());
++
++#if PLATFORM(GBM)
++                static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC eglImageTargetTexture2DOES = 0;
++                if (!eglImageTargetTexture2DOES)
++                    eglImageTargetTexture2DOES = (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
++                eglImageTargetTexture2DOES (GL_TEXTURE_2D,
++                    gst_egl_image_memory_get_image (mem));
++#else
+                 glEGLImageTargetTexture2DOES (GL_TEXTURE_2D,
+                     gst_egl_image_memory_get_image (mem));
+-
++#endif
+                 m_orientation = gst_egl_image_memory_get_orientation (mem);
+                 if (m_orientation != GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_NORMAL
+                     && m_orientation != GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP) {
+diff --git a/Source/cmake/OptionsWPE.cmake b/Source/cmake/OptionsWPE.cmake
+index a2a3004..d80529d 100644
+--- a/Source/cmake/OptionsWPE.cmake
++++ b/Source/cmake/OptionsWPE.cmake
+@@ -163,6 +163,7 @@ SET_AND_EXPOSE_TO_BUILD(USE_EGL TRUE)
+ SET_AND_EXPOSE_TO_BUILD(WTF_PLATFORM_BCM_NEXUS ${USE_WPE_BACKEND_BCM_NEXUS})
+ SET_AND_EXPOSE_TO_BUILD(WTF_PLATFORM_BCM_RPI ${USE_WPE_BACKEND_BCM_RPI})
+ SET_AND_EXPOSE_TO_BUILD(WTF_PLATFORM_INTEL_CE ${USE_WPE_BACKEND_INTEL_CE})
++SET_AND_EXPOSE_TO_BUILD(WTF_PLATFORM_GBM ${USE_WPE_BUFFER_MANAGEMENT_GBM})
+ 
+ set(FORWARDING_HEADERS_DIR ${DERIVED_SOURCES_DIR}/ForwardingHeaders)
+ 
