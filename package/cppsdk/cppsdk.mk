@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-CPPSDK_VERSION = bc2b95343a3c78dab71340680132d418a27a68c1
+CPPSDK_VERSION = d66a44032246cd9fedb8302b4d2befabeb701b48
 CPPSDK_SITE_METHOD = git
 CPPSDK_SITE = git@github.com:Metrological/cppsdk.git
 CPPSDK_INSTALL_STAGING = YES
@@ -37,6 +37,7 @@ endif
 
 ifeq ($(BR2_PACKAGE_CPPSDK_TEST_APPS),y)
 CPPSDK_CONF_OPTS += -DCPPSDK_UNIT_TESTS=ON
+CPPSDK_DEPENDENCIES += cppunit
 endif
 
 ifeq ($(BR2_PACKAGE_CPPSDK_DEADLOCK_DETECTION),y)

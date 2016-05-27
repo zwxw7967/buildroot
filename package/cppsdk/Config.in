@@ -26,6 +26,8 @@ config BR2_PACKAGE_CPPSDK_TEST_APPS
     default n
     help
       Adds unittests.
+comment "BR2_PACKAGE_CPPSDK_TEST_APPS requires BR2_PACKAGE_CPPUNIT"
+    depends on !BR2_PACKAGE_CPPUNIT
 
 config BR2_PACKAGE_CPPSDK_DEADLOCK_DETECTION
 	bool "deadlock-detection"
