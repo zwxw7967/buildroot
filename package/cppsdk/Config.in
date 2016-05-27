@@ -21,6 +21,12 @@ config BR2_PACKAGE_CPPSDK_DEBUG
 	  Build the cppsdk in debug mode. Always usefull to have a
 	  partial enabled debug stack.
 
+config BR2_PACKAGE_CPPSDK_TEST_APPS
+    bool "unit-testing"
+    default n
+    help
+      Adds unittests.
+
 config BR2_PACKAGE_CPPSDK_DEADLOCK_DETECTION
 	bool "deadlock-detection"
 	default n
