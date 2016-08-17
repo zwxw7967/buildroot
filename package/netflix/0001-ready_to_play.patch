@@ -1,0 +1,143 @@
+diff --git a/partner/dpi/gstreamer/ESPlayerGst.cpp b/partner/dpi/gstreamer/ESPlayerGst.cpp
+index 18d45e9..4575897 100644
+--- a/partner/dpi/gstreamer/ESPlayerGst.cpp
++++ b/partner/dpi/gstreamer/ESPlayerGst.cpp
+@@ -40,7 +40,7 @@ ESPlayerGst::ESPlayerGst() : mInputExhausted(false),
+                              mGstSource(NULL),
+                              WAIT_WHILE_IDLING(100),
+                              mGstSourceID(0),
+-                             mBufferPushAllowed(1),
++                             mBufferPushAllowed(true),
+                              mSrc(NULL),
+                              mPtsOffset(-1),
+                              mResetPtsOffset(true),
+@@ -93,7 +93,11 @@ ESPlayerGst::init(const struct StreamPlayerInitData& initData,
+   }
+ 
+   mSrc = gst_element_factory_make("appsrc", NULL);
+-  g_object_set(mSrc, "min-percent", (guint) 20, "max-bytes", (guint64) 512 * 1024, NULL);
++  if (mMediaType == VIDEO) 
++    g_object_set(mSrc, "min-percent", (guint) 20, "max-bytes", (guint64) 1 * 512 * 1024, NULL);
++  else 
++    g_object_set(mSrc, "min-percent", (guint) 20, "max-bytes", (guint64) 1 * 64 * 1024, NULL);
++
+   GstAppSrcCallbacks callbacks = {gst_bin_need_data, gst_bin_enough_data, NULL};
+   gst_app_src_set_callbacks(GST_APP_SRC(mSrc), &callbacks, (gpointer)(this), NULL);
+   return err;
+@@ -241,11 +245,8 @@ bool ESPlayerGst::readyForPlaybackStart()
+     }
+   }
+ 
+-  // PARTNER: The reference application uses the current renderer state to
+-  // determine if we should return true here.  Partners will need to set
+-  // a flag in the decoder context when their decoder buffer has enough
+-  // data.  In this current state, we will never go ready!
+-  return true;
++  //printf("bool ESPlayerGst::readyForPlaybackStart() mInputExhausted: %s mReadyToPlay: %s \n", mInputExhausted ? "TRUE" : "FALSE", mReadyToPlay ? "TRUE" : "FALSE");
++  return !mInputExhausted && mReadyToPlay;
+ }
+ 
+ void ESPlayerGst::flush()
+@@ -337,6 +338,8 @@ void ESPlayerGst::gst_bin_need_data    (GstAppSrc *src, guint length, gpointer u
+   NTRACE(TRACE_MEDIACONTROL, "ESPlayerGst::vbin_need_data() from %d", (uint32_t)(src));
+ 
+   // attach to the playback group main context
++  self->mReadyToPlay = false;
++  self->mBufferPushAllowed = true;
+   self->attachGstSource();
+ }
+ 
+@@ -344,6 +347,8 @@ void ESPlayerGst::gst_bin_enough_data  (GstAppSrc *src, gpointer user_data)
+ {
+   ESPlayerGst *self = (ESPlayerGst *)(user_data);
+   NTRACE(TRACE_MEDIACONTROL, "ESPlayerGst::vbin_enough_data() from %d", (uint32_t)(src));
++  self->mReadyToPlay = true;
++  self->mBufferPushAllowed = false;
+   self->detachGstSource();
+ }
+ 
+@@ -376,4 +381,3 @@ void ESPlayerGst::setBufferPushAllowed(bool allowed)
+   ScopedMutex cs(mDecoderTaskMutex);
+   mBufferPushAllowed=allowed;
+ }
+-
+diff --git a/partner/dpi/gstreamer/PlaybackGroupNative.cpp b/partner/dpi/gstreamer/PlaybackGroupNative.cpp
+index 57226dc..8b927bf 100644
+--- a/partner/dpi/gstreamer/PlaybackGroupNative.cpp
++++ b/partner/dpi/gstreamer/PlaybackGroupNative.cpp
+@@ -331,10 +331,6 @@ bool PlaybackGroupNative::setPlaybackState(PlaybackState state)
+     if(state == PAUSE)
+     {
+         GstStateChangeReturn ret;
+-        set<ESPlayerGst*>::iterator it;
+-        for(it = mStreamPlayers.begin(); it != mStreamPlayers.end(); it++){
+-            (*it)->setBufferPushAllowed(false);
+-        }
+         // stop buffer push
+         ret = gst_element_set_state(mGstPipeline, GST_STATE_PAUSED);
+     }
+@@ -349,13 +345,6 @@ bool PlaybackGroupNative::setPlaybackState(PlaybackState state)
+ 
+         gst_netflix_src_configuration_done(mSource);
+       }
+-
+-        if(!streamPlayersAreReadyForPlaybackStart() )
+-        {
+-            // Players are not ready to transition from paused to play. Return
+-            // false.  The SDK will wait a few ms and try again.
+-            return false;
+-        }
+         GstStateChangeReturn ret;
+         GstState state;
+         GstState pending;
+@@ -367,14 +356,9 @@ bool PlaybackGroupNative::setPlaybackState(PlaybackState state)
+ 
+         //Log::error(TRACE_MEDIACONTROL, "get_state returned: %d, state: %s pending: %s\n", ret, gst_element_state_get_name(state), gst_element_state_get_name(pending));
+ 
+-        if (state == GST_STATE_PAUSED){  // truely ready, set to play
++        if (state == GST_STATE_PAUSED && streamPlayersAreReadyForPlaybackStart()){  // truely ready, set to play
+             ret = gst_element_set_state(mGstPipeline, GST_STATE_PLAYING);
+             // allow buffer push
+-            set<ESPlayerGst*>::iterator it;
+-            for(it = mStreamPlayers.begin(); it != mStreamPlayers.end(); it++){
+-                (*it)->setBufferPushAllowed(true);
+-            }
+-
+         }else if (state == GST_STATE_PLAYING){ // already playing, do nothing
+         }else if (pending == GST_STATE_PAUSED){ // will be ready, return false
+             return false;
+@@ -409,6 +393,7 @@ void PlaybackGroupNative::flush()
+     for(it = mStreamPlayers.begin(); it != mStreamPlayers.end(); it++)
+     {
+         (*it)->setBufferPushAllowed(false);
++        (*it)->setReadyToPlayState(false);
+     }
+ 
+     Log::info(TRACE_MEDIACONTROL, "flushing pipeline...");
+@@ -425,6 +410,7 @@ void PlaybackGroupNative::flush()
+     // reset pts offset for everybody
+     for(it = mStreamPlayers.begin(); it != mStreamPlayers.end(); it++)
+     {
++        (*it)->setBufferPushAllowed(true);
+         (*it)->resetPtsOffset();
+     }
+ }
+@@ -746,15 +732,16 @@ gboolean PlaybackGroupNative::handleGstMessage(GstMessage* message)
+                 gst_element_state_get_name (oldstate), gst_element_state_get_name (newstate), gst_element_state_get_name (pending));
+ 
+       if (oldstate == GST_STATE_NULL && newstate == GST_STATE_READY) {
+-
+       } else if (oldstate == GST_STATE_READY && newstate == GST_STATE_PAUSED) {
+         GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(GST_BIN(mGstPipeline), GST_DEBUG_GRAPH_SHOW_ALL, "paused-pipeline");
++      } else if (oldstate == GST_STATE_PAUSED && newstate == GST_STATE_PAUSED) {
+       } else if (oldstate == GST_STATE_PAUSED && newstate == GST_STATE_PLAYING) {
+         startPositionTimer();
+         GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(GST_BIN(mGstPipeline), GST_DEBUG_GRAPH_SHOW_ALL, "playing-pipeline");
+-
+       } else if (oldstate == GST_STATE_PLAYING && newstate == GST_STATE_PAUSED) {
+         stopPositionTimer();
++      } else if (oldstate == GST_STATE_PAUSED && newstate == GST_STATE_READY) {
++      } else if (oldstate == GST_STATE_READY && newstate == GST_STATE_NULL) {
+       }
+       break;
+     default:
