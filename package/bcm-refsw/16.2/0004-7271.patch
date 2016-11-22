@@ -1,0 +1,76 @@
+diff -ruNP 00org/rockford/middleware/v3d/platform/nexus/platform_nexus.mk 01new/rockford/middleware/v3d/platform/nexus/platform_nexus.mk
+--- 00org/rockford/middleware/v3d/platform/nexus/platform_nexus.mk	2016-11-22 11:39:56.104996705 +0100
++++ 01new/rockford/middleware/v3d/platform/nexus/platform_nexus.mk	2016-11-22 11:35:01.686360460 +0100
+@@ -173,9 +173,12 @@
+ endif
+ 
+ $(LIBDIR)/libnxpl.so: $(OBJS)
+-	$(Q)echo Linking ... libnxpl.so
++	$(Q)echo Linking ...... libnxpl.so
++	$(Q)echo objs: $(OBJS)
+ 	$(Q)mkdir -p $(LIBDIR)
++	$(Q)echo right before call
+ 	$(Q)$(CC) $(LDFLAGS) -shared -o $(LIBDIR)/libnxpl.so $(OBJS)
++	$(Q)echo right after call
+ 
+ $(LIBDIR)/libnxpl.a: $(OBJS)
+ 	$(Q)echo Archiving ... libnxpl.a
+diff -ruNP 00org/rockford/middleware/vc5/driver/V3DDriver.mk 01new/rockford/middleware/vc5/driver/V3DDriver.mk
+--- 00org/rockford/middleware/vc5/driver/V3DDriver.mk	2016-11-22 11:39:56.196996329 +0100
++++ 01new/rockford/middleware/vc5/driver/V3DDriver.mk	2016-11-22 11:35:01.810360159 +0100
+@@ -10,9 +10,9 @@
+ 
+ PROFILING?=0
+ 
+-ifeq ($(VERBOSE),)
+-Q := @
+-endif
++#ifeq ($(VERBOSE),)
++#Q := @
++#endif
+ 
+ $(info === Building V3D driver ===)
+ 
+@@ -46,11 +46,11 @@
+ # 32-bit ARM
+ ifeq ($(findstring arm, ${B_REFSW_ARCH}), arm)
+ CFLAGS += \
+-	-mcpu=cortex-a15 \
+ 	-mfpu=neon
+ endif
+ 
+ CFLAGS += \
++   -frecord-gcc-switches \
+ 	-fpic -DPIC \
+ 	-std=c99 \
+ 	-I$(MAGNUM_TOP)/basemodules/chp/include/$(BCHP_CHIP)/rdb/$(BCHP_VER_LOWER) \
+@@ -522,6 +522,7 @@
+ define DependRule_C
+ $(2) : $(1) | OUTDIR $(AUTO_FILES)
+ 	$(Q)echo Making depends for $(1)
++	$(Q)echo CC -- $(CC)
+ 	$(Q)touch $(2).tmp
+ 	$(Q)$(CC) -D__SSE__ -D__MMX__ -M -MQ $(3) -MF $(2).tmp -MM $(CFLAGS) $(1)
+ 	$(Q)sed 's/D:/\/\/D/g' < $(2).tmp | sed 's/C:/\/\/C/g' > $(2)
+diff -ruNP 00org/rockford/middleware/vc5/platform/nexus/platform_nexus_common.mk 01new/rockford/middleware/vc5/platform/nexus/platform_nexus_common.mk
+--- 00org/rockford/middleware/vc5/platform/nexus/platform_nexus_common.mk	2016-11-22 11:39:57.344991633 +0100
++++ 01new/rockford/middleware/vc5/platform/nexus/platform_nexus_common.mk	2016-11-22 11:35:02.658357576 +0100
+@@ -156,10 +156,15 @@
+ $(foreach src,$(filter %.c,$(SOURCES)),$(eval -include $(OBJDIR)/$(basename $(notdir $(src))).d))
+ endif
+ 
++LDFLAGSS2 := $(filter-out -lnxpl,$(LDFLAGS))
++
+ $(LIB_DYNAMIC): $(OBJS)
+-	$(Q)echo Linking ... $(notdir $@)
++	$(Q)echo Linking Sander ... $(notdir $@)
++	$(Q)echo OBJ -- $(OBJS)
++	$(Q)echo LDFLAGS before -- $(LDFLAGS)
++	$(Q)echo LDFLAGS after -- $(LDFLAGS2)
+ 	$(Q)mkdir -p $(LIBDIR)
+-	$(Q)$(CC) $(OBJS) $(LDFLAGS) -shared -o $@
++	$(Q)$(CC) $(OBJS) $(LDFLAGS2) -shared -o $@
+ 
+ $(LIB_STATIC).a: $(OBJS)
+ 	$(Q)echo Archiving ... $(notdir $@)
+
