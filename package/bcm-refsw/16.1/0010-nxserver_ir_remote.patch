@@ -1,0 +1,23 @@
+diff --git a/nexus/nxclient/server/nxserverlib.c b/nexus/nxclient/server/nxserverlib.c
+index 76cb612..ec11e59 100644
+--- a/nexus/nxclient/server/nxserverlib.c
++++ b/nexus/nxclient/server/nxserverlib.c
+@@ -2457,7 +2457,17 @@ void nxserver_get_default_settings(struct nxserver_settings *settings)
+             settings->session[i].output.sd = false;
+ #endif
+ #if NEXUS_HAS_IR_INPUT
+-            settings->session[i].ir_input_mode = NEXUS_IrInputMode_eCirNec; /* silver */
++            {
++            const char* irMode = getenv("NEXUS_IR_MODE");
++            if (irMode) {
++                /* to use NEXUS_IrInputMode_eCirRstep add 'export NEXUS_IR_MODE=23' in S70nxserver */
++                settings->session[i].ir_input_mode = atoi(irMode);
++            } else {
++                settings->session[i].ir_input_mode = NEXUS_IrInputMode_eCirNec; /* silver */
++            }
++            printf("%s: NEXUS_IR_MODE %s\n", __FUNCTION__, irMode);
++            BDBG_MSG(("NEXUS_IR_MODE %s", irMode));
++            }
+ #endif
+             settings->session[i].evdevInput = true;
+             settings->session[i].keypad = false;
