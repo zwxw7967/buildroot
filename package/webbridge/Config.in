@@ -5,8 +5,8 @@ config BR2_PACKAGE_WEBBRIDGE
 	select BR2_PACKAGE_CPPSDK_TRACING
 	select BR2_PACKAGE_CPPSDK_RPC
 	help
-	  This application allows plugins to be hosted in a process that 
-	  handles webrequest and websockets. 
+	  This application allows plugins to be hosted in a process that
+	  handles webrequest and websockets.
 
 	  The webrequest and websocket serialization and deserialization
 	  are part of the WebBridge. The plugin will receive objects and
@@ -73,27 +73,27 @@ config BR2_PACKAGE_WEBBRIDGE_PLUGIN_TRACECONTROL
 	  Clients can use this interface to enable (and disable) at run-
 	  time traces in the process currently running
 
-	  NOTE: Tracing does NOT replace logging but is a tool for 
-	  developpers to analyse there code. 
+	  NOTE: Tracing does NOT replace logging but is a tool for
+	  developpers to analyse there code.
 
 config BR2_PACKAGE_WEBBRIDGE_PLUGIN_MONITOR
 	bool "monitor"
 	help
-	  A plugin that allows for a monitoring plugins with respect to 
-	  memory usage. Hard limits can be set on the maximum memory usage 
+	  A plugin that allows for a monitoring plugins with respect to
+	  memory usage. Hard limits can be set on the maximum memory usage
 	  and in case the limits are violated, the plugin can be restarted.
 
 config BR2_PACKAGE_WEBBRIDGE_PLUGIN_DICTIONARY
 	bool "dictionary"
 	help
 	  A plugin that allows for a persistent storage of data (key, value)
-		  that can be accessed as a system-wide singleton and allows for 
+		  that can be accessed as a system-wide singleton and allows for
 		  notification on change by any instance in any process.
 
 config BR2_PACKAGE_WEBBRIDGE_PLUGIN_COMMANDER
-        bool "commander"
-        help
-          A plugin that allows to ingest a sequence of commands to be executed by the webbridge
+		bool "commander"
+		help
+		  A plugin that allows to ingest a sequence of commands to be executed by the webbridge
 
 config BR2_PACKAGE_WEBBRIDGE_PLUGIN_BACKOFFICE
 	bool "backofffice"
@@ -106,7 +106,7 @@ menuconfig BR2_PACKAGE_WEBBRIDGE_PLUGIN_PROVISIONING
 	bool "provisioning"
 	depends on BR2_PACKAGE_LIBPROVISION
 	help
-	  A component to allow external provisioning of devices with the 
+	  A component to allow external provisioning of devices with the
 	  proper credentials. Currently focused on provisioning from the
 	  Metrological Back Office.
 
@@ -125,36 +125,56 @@ comment "provisioning needs the package libprovision in external mode."
 config BR2_PACKAGE_WEBBRIDGE_PLUGIN_WEBPROXY
 	bool "webproxy"
 	help
-	  Provide functionality to proxy WebSockets (initiative) to tcp connections. 
+	  Provide functionality to proxy WebSockets (initiative) to tcp connections.
+
 
 config BR2_PACKAGE_WEBBRIDGE_PLUGIN_REMOTECONTROL
-	bool "remotecontrol"
+	bool "remote control"
 	help
-	  A remote control implementation that translates keys coming in from a 
-	  different source into the linux key system. 
+		Enable remote control support through webbridge
 
-	  Current implementations supports:
-	  - GreeenPeak RF4CE chip (510) with RF4CE remotes.
+if BR2_PACKAGE_WEBBRIDGE_PLUGIN_REMOTECONTROL
 
-comment "remotecontrol requires the GreenPeak GP501 or GP711 to be selected and userland lib to be build."
+choice
+	prompt "remote control type"
+	default BR2_PACKAGE_WEBBRIDGE_PLUGIN_REMOTECONTROL_IR if !BR2_PACKAGE_GREENPEAK
+	default BR2_PACKAGE_WEBBRIDGE_PLUGIN_REMOTECONTROL_GREENPEAK if BR2_PACKAGE_GREENPEAK
+	help
+		Select the remote control type to be used
+
+	config BR2_PACKAGE_WEBBRIDGE_PLUGIN_REMOTECONTROL_IR
+		bool "default IR"
+
+	config BR2_PACKAGE_WEBBRIDGE_PLUGIN_REMOTECONTROL_RSTEP
+		bool "Rstep IR"
+
+	config BR2_PACKAGE_WEBBRIDGE_PLUGIN_REMOTECONTROL_GREENPEAK
+		bool "Greenpeak RF4CE remote control"
+		depends on BR2_PACKAGE_GREENPEAK && BR2_PACKAGE_GREENPEAK_USERLANDLIB && (BR2_PACKAGE_GREENPEAK_GP501 || BR2_PACKAGE_GREENPEAK_GP711)
+		help
+			Current implementations supports:
+			- GreenPeak RF4CE chip (510) with RF4CE remotes.
+			- GreenPeak RF4CE chip (711) with RF4CE remotes.
+
+	comment "GreenPeak requires the GreenPeak to be selected"
 	depends on !BR2_PACKAGE_GREENPEAK || !BR2_PACKAGE_GREENPEAK_USERLANDLIB || (!BR2_PACKAGE_GREENPEAK_GP501 && !BR2_PACKAGE_GREENPEAK_GP711)
 
-config BR2_PACKAGE_WEBBRIDGE_PLUGIN_VOICECONTROL
-	bool "voicecontrol"
-	help
-	  A voice control implementation that captures audio fragments and send them tru a websocket.
+	config BR2_PACKAGE_WEBBRIDGE_PLUGIN_REMOTECONTROL_VOICECONTROL
+		bool "voicecontrol"
+		depends on BR2_PACKAGE_GREENPEAK && BR2_PACKAGE_GREENPEAK_USERLANDLIB && (BR2_PACKAGE_GREENPEAK_GP501 || BR2_PACKAGE_GREENPEAK_GP711)
+		help
+		  A GreenPeak voice control implementation that captures audio fragments and send them tru a websocket.
 
-	  Current implementations supports:
-	  - GreeenPeak RF4CE chip (501) with RF4CE remotes.
+		  Current implementations supports:
+		  - GreeenPeak RF4CE chip (501) with RF4CE remotes.
 
-comment "voicecontrol requires the GreenPeak GP501 or GP711 to be selected and userland lib to be build."
-	depends on !BR2_PACKAGE_GREENPEAK || !BR2_PACKAGE_GREENPEAK_USERLANDLIB || (!BR2_PACKAGE_GREENPEAK_GP501 && !BR2_PACKAGE_GREENPEAK_GP711)
+	comment "Voice Control requires the GreenPeak to be selected"
+		depends on !BR2_PACKAGE_GREENPEAK || !BR2_PACKAGE_GREENPEAK_USERLANDLIB || (!BR2_PACKAGE_GREENPEAK_GP501 && !BR2_PACKAGE_GREENPEAK_GP711)
 
-config BR2_PACKAGE_WEBBRIDGE_PLUGIN_IR_REMOTE
-	bool "irremote"
-	help
-	  A remote control implementation that translates keys coming in from a
-	  IR remote into the linux key system.
+
+endchoice
+
+endif
 
 config BR2_PACKAGE_WEBBRIDGE_PLUGIN_DEVICEINFO
 	bool "deviceinfo"
@@ -320,7 +340,7 @@ menuconfig BR2_PACKAGE_WEBBRIDGE_PLUGIN_WEBSERVER
 	bool "webserver"
 	help
 	  A plugin that implements a WebServer with Proxy functionality. Used to serve
-          webpages and proxy web requests.
+		  webpages and proxy web requests.
 
 if BR2_PACKAGE_WEBBRIDGE_PLUGIN_WEBSERVER
 
@@ -354,7 +374,7 @@ config BR2_PACKAGE_WEBBRIDGE_PLUGIN_WEBSERVER_WEBPATH
 	string "persistent path"
 	default "www"
 
-endif	
+endif
 
 config BR2_PACKAGE_WEBBRIDGE_PLUGIN_WEBSHELL
 	bool "webshell"
