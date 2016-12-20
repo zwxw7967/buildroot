@@ -1,0 +1,72 @@
+diff -ruNP 00org/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamerBase.cpp 01new/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamerBase.cpp
+--- 00org/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamerBase.cpp	2016-12-19 16:30:29.068581263 +0100
++++ 01new/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamerBase.cpp	2016-12-19 16:31:02.139023710 +0100
+@@ -285,7 +285,7 @@
+ void MediaPlayerPrivateGStreamerBase::setPipeline(GstElement* pipeline)
+ {
+     m_pipeline = pipeline;
+-#if USE(HOLE_PUNCH_GSTREAMER) && (USE(WESTEROS_SINK) || USE(FUSION_SINK))
++#if USE(HOLE_PUNCH_GSTREAMER) && (USE(WESTEROS_SINK) || USE(FUSION_SINK) || PLATFORM(BCM_NEXUS))
+     updateVideoRectangle();
+ #endif
+ }
+@@ -797,7 +797,7 @@
+     GST_INFO("Setting size to %dx%d", size.width(), size.height());
+     m_size = size;
+ 
+-#if USE(WESTEROS_SINK) || USE(FUSION_SINK)
++#if USE(WESTEROS_SINK) || USE(FUSION_SINK) || (USE(HOLE_PUNCH_GSTREAMER) && PLATFORM(BCM_NEXUS))
+     updateVideoRectangle();
+ #endif
+ }
+@@ -809,12 +809,12 @@
+ 
+     m_position = position;
+ 
+-#if USE(WESTEROS_SINK) || USE(FUSION_SINK)
++#if USE(WESTEROS_SINK) || USE(FUSION_SINK) || (USE(HOLE_PUNCH_GSTREAMER) && PLATFORM(BCM_NEXUS))
+     updateVideoRectangle();
+ #endif
+ }
+ 
+-#if USE(WESTEROS_SINK) || USE(FUSION_SINK)
++#if USE(WESTEROS_SINK) || USE(FUSION_SINK) || (USE(HOLE_PUNCH_GSTREAMER) && PLATFORM(BCM_NEXUS))
+ void MediaPlayerPrivateGStreamerBase::updateVideoRectangle()
+ {
+     if (!m_pipeline)
+diff -ruNP 00org/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamerBase.h 01new/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamerBase.h
+--- 00org/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamerBase.h	2016-12-19 16:30:29.068581263 +0100
++++ 01new/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamerBase.h	2016-12-19 16:31:02.139023710 +0100
+@@ -252,8 +252,7 @@
+ #endif
+ 
+ private:
+-
+-#if USE(WESTEROS_SINK) || USE(FUSION_SINK)
++#if USE(WESTEROS_SINK) || USE(FUSION_SINK) || PLATFORM(BCM_NEXUS)
+     void updateVideoRectangle();
+ #endif
+ 
+diff -ruNP 00org/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp 01new/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp
+--- 00org/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp	2016-12-19 16:30:29.068581263 +0100
++++ 01new/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp	2016-12-19 16:31:02.139023710 +0100
+@@ -2202,10 +2202,18 @@
+         g_signal_connect_swapped(videoSinkPad.get(), "notify::caps", G_CALLBACK(videoSinkCapsChangedCallback), this);
+ #endif
+ 
+-#if USE(WESTEROS_SINK) && USE(HOLE_PUNCH_GSTREAMER)
++#if USE(HOLE_PUNCH_GSTREAMER) && (USE(WESTEROS_SINK) || PLATFORM(BCM_NEXUS))
++#if USE(WESTEROS_SINK)
+     GRefPtr<GstElementFactory> westerosfactory = adoptGRef(gst_element_factory_find("westerossink"));
+ 
+     m_videoSink = gst_element_factory_create(westerosfactory.get(), "WesterosVideoSink");
++#elif PLATFORM(BCM_NEXUS)
++    m_videoSink = gst_element_factory_make("brcmvideosink", nullptr);
++    if (!m_videoSink) {
++       GST_DEBUG("MediaPlayerPrivateGStreamer: failed to create video sink");
++    }
++#endif
++
+     g_object_set(m_pipeline.get(), "video-sink", m_videoSink.get(), nullptr);
+     g_object_set(G_OBJECT(m_videoSink.get()), "zorder",0.0f, nullptr);
+ #endif
