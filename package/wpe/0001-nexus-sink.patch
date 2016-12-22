@@ -43,7 +43,7 @@ diff -ruNP 00org/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGS
  private:
 -
 -#if USE(WESTEROS_SINK) || USE(FUSION_SINK)
-+#if USE(WESTEROS_SINK) || USE(FUSION_SINK) || PLATFORM(BCM_NEXUS)
++#if USE(WESTEROS_SINK) || USE(FUSION_SINK) || (USE(HOLE_PUNCH_GSTREAMER) && PLATFORM(BCM_NEXUS)) 
      void updateVideoRectangle();
  #endif
  
