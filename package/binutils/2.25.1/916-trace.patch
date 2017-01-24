@@ -1,0 +1,42 @@
+diff -ruNP 00org/binutils/ar.c 01new/binutils/ar.c
+--- 00org/binutils/ar.c	2016-12-23 10:44:05.021457934 +0100
++++ 01new/binutils/ar.c	2016-12-23 10:45:03.683589661 +0100
+@@ -669,11 +669,38 @@
+   xexit (status);
+ }
+ 
++const char * g_appendFileName = "/tmp/log-ar.txt";
++
++static void logCommandLine(int argc, char ** argv)
++{
++   FILE * outFile = fopen(g_appendFileName, "a");
++   
++   char cwd[1024];
++   getcwd(cwd, sizeof(cwd));
++   
++   fprintf(outFile, "cwd: \"%s\"\n", cwd);
++   
++   fprintf(outFile, "%s", "argv: ");
++   
++   for (int i = 0; i < argc; i++) {
++      if (i != 0)
++         fprintf(outFile, "%s", " ");
++         
++      fprintf(outFile, "%s", argv[i]);
++   }
++   
++   fprintf(outFile, "%s", "\n");
++   
++   fclose(outFile);
++}
++
+ int main (int, char **);
+ 
+ int
+ main (int argc, char **argv)
+ {
++  logCommandLine(argc, argv);
++
+   int arg_index;
+   char **files;
+   int file_count;
