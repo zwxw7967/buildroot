@@ -65,6 +65,7 @@ ln -sfn $SOURCE/usr/share/fonts/ttf-bitstream-vera /usr/share/fonts/ttf-bitstrea
 rm -rf $SOURCE/root
 mkdir -p $STORAGE_PATH/app
 ln -sfn $STORAGE_PATH/app $SOURCE/root
+mkdir -p $SOURCE/root/QueueCommunicator
 
 # Netflix
 if [ ! -d $SOURCE/root/Netflix ]; then
