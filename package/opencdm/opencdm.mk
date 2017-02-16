@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-OPENCDM_VERSION = bcbff3495349bb26ddb95cf3ef5b5076fe6cf25b
+OPENCDM_VERSION = 289072f9f93a888078a7809d121cfcf2d527e346
 OPENCDM_SITE_METHOD = git
 OPENCDM_SITE = https://github.com/Metrological/open-content-decryption-module.git
 
